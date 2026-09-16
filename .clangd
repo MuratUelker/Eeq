@@ -1,0 +1,11 @@
+CompileFlags:
+  CompilationDatabaseDir: /Users/muratulker/Projeler/Code/Eeq/build
+  Add:
+    - "-std=c++20"
+    - "-Wno-everything"
+Diagnostics:
+  Suppress:
+    - "unknown_argument"
+    - "unknown_warning_argument"
+Index:
+  Background: Build

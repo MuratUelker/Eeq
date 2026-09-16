@@ -1,0 +1,38 @@
+# Build
+build/
+cmake-build-*/
+compile_commands.json
+
+# JUCE
+.jucer
+*.jucer
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Compiled
+*.o
+*.obj
+*.so
+*.dylib
+*.dll
+*.a
+*.lib
+
+# Plugin binaries
+*.vst3
+*.component
+*.lv2
+*.app
+
+# LSP cache
+.clangd/
+.cache/
