@@ -74,31 +74,27 @@ private:
     juce::TextButton redoBtn{"Redo"};
     juce::ToggleButton fullScreenBtn{"FS"};
 
-    // === Band controls panel ===
-    juce::Slider freqSlider, gainSlider, qSlider;
-    juce::ComboBox typeBox, channelModeBox;
-    juce::Label freqLabel{"", "Freq"}, gainLabel{"", "Gain"}, qLabel{"", "Q"},
-                typeLabel{"", "Type"}, chLabel{"", "Ch"};
-
-    // Solo / Bypass per band
-    juce::ToggleButton soloBtn{"S"};
+    // === Floating band controls (Pro-Q3 style) ===
     juce::ToggleButton bandBypassBtn{"B"};
+    juce::ComboBox typeBox;
+    juce::ComboBox slopeBox;
+    juce::Slider freqSlider, gainSlider, qSlider;
+    juce::ComboBox channelModeBox;
+    juce::ToggleButton gainQBtn{"GQ"};
+    juce::ToggleButton prevBandBtn{"<"};
+    juce::ToggleButton nextBandBtn{">"};
+    juce::TextButton deleteBandBtn{"X"};
+    juce::Label bandNumberLabel{"", "1"};
 
-    // Dynamic EQ controls
-    juce::ToggleButton dynBtn{"Dyn"};
+    // Dynamic EQ (row 2 of floating panel)
     juce::Slider dynRangeSlider;
     juce::Slider dynThreshSlider;
     juce::ToggleButton dynAutoBtn{"Auto"};
-    juce::Label dynRangeLabel{"", "Range"}, dynThreshLabel{"", "Thresh"};
-
-    // Slope and SC trigger
-    juce::ComboBox slopeBox;
-    juce::Label slopeLabel{"", "Slope"};
     juce::ToggleButton scTriggerBtn{"SC"};
-    juce::Label scLabel{"", "SC"};
+
     static const juce::StringArray slopeNames;
 
-    // === Bottom bar controls ===
+    // === Bottom bar controls (global) ===
     juce::ToggleButton phaseBtn{"Phase"};
     juce::ToggleButton autoGainBtn{"AG"};
     juce::Slider outputPanSlider;
@@ -127,7 +123,7 @@ private:
         juce::Colour(0xFF4361ee), juce::Colour(0xFF7209b7), juce::Colour(0xFF560bad),
     };
 
-    // Layout
+    // Layout helpers
     float freqToX(float freq, juce::Rectangle<float> d) const;
     float xToFreq(float x, juce::Rectangle<float> d) const;
     float gainToY(float gain, juce::Rectangle<float> d) const;
@@ -140,7 +136,9 @@ private:
     void updateControlsFromBand(int idx);
     void updateBandFromControls(int idx);
     void addBandAt(float freq, float gain);
+    void navigateBand(int direction);
 
+    // Drawing
     void drawGrid(juce::Graphics&, juce::Rectangle<float>);
     void drawSpectrum(juce::Graphics&, juce::Rectangle<float>);
     void drawEQCurve(juce::Graphics&, juce::Rectangle<float>);
@@ -148,13 +146,15 @@ private:
     void drawBandInfo(juce::Graphics&, juce::Rectangle<float>);
     void drawPianoRoll(juce::Graphics&, juce::Rectangle<float>);
     void drawOutputMeter(juce::Graphics&, juce::Rectangle<float>);
-    void drawPeakHold(juce::Graphics&, juce::Rectangle<float>);
+    void drawBandControls(juce::Graphics&, juce::Rectangle<float>);
 
+    // Bounds
     juce::Rectangle<float> getDisplayBounds() const;
     juce::Rectangle<float> getTopBarBounds() const;
     juce::Rectangle<float> getBottomBarBounds() const;
     juce::Rectangle<float> getPianoBounds() const;
     juce::Rectangle<float> getMeterBounds() const;
+    juce::Rectangle<float> getBandControlsBounds() const;
 
     void loadPreset(int index);
 

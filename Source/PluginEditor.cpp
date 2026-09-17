@@ -97,118 +97,27 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     addAndMakeVisible(fullScreenBtn);
     fullScreenBtn.addListener(this);
 
-    // === Band controls ===
-    freqSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
-    freqSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 16);
-    freqSlider.setRange(20.0, 22000.0, 0.1);
-    freqSlider.setTextValueSuffix(" Hz");
-    freqSlider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xFFe94560));
-    freqSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFFe94560));
-    freqSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFe0e0ff));
-    freqSlider.addListener(this);
-    addAndMakeVisible(freqSlider);
+    // === Floating band controls ===
 
-    gainSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
-    gainSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 16);
-    gainSlider.setRange(-30.0, 30.0, 0.01);
-    gainSlider.setTextValueSuffix(" dB");
-    gainSlider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xFF00b4d8));
-    gainSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFF00b4d8));
-    gainSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFe0e0ff));
-    gainSlider.addListener(this);
-    addAndMakeVisible(gainSlider);
+    // Bypass
+    bandBypassBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFa0a0c0));
+    bandBypassBtn.setColour(juce::ToggleButton::tickColourId, juce::Colour(0xFFe94560));
+    bandBypassBtn.setClickingTogglesState(true);
+    addAndMakeVisible(bandBypassBtn);
+    bandBypassBtn.setVisible(false);
+    bandBypassBtn.addListener(this);
 
-    qSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
-    qSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 16);
-    qSlider.setRange(0.1, 10.0, 0.01);
-    qSlider.setSkewFactor(0.4);
-    qSlider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xFF533483));
-    qSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFF533483));
-    qSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFe0e0ff));
-    qSlider.addListener(this);
-    addAndMakeVisible(qSlider);
-
-    for (auto* label : {&freqLabel, &gainLabel, &qLabel, &typeLabel, &chLabel})
-    {
-        label->setJustificationType(juce::Justification::centred);
-        label->setFont(makeFont(10.0f));
-        label->setColour(juce::Label::textColourId, juce::Colour(0xFFa0a0c0));
-        addAndMakeVisible(*label);
-    }
-
+    // Type
     for (const auto& name : filterTypeNames)
         typeBox.addItem(name, typeBox.getNumItems() + 1);
     typeBox.setSelectedId(1);
     typeBox.setColour(juce::ComboBox::backgroundColourId, juce::Colour(0xFF1a1a2e));
     typeBox.setColour(juce::ComboBox::textColourId, juce::Colour(0xFFe0e0ff));
     addAndMakeVisible(typeBox);
+    typeBox.setVisible(false);
     typeBox.addListener(this);
 
-    for (const auto& name : channelModeNames)
-        channelModeBox.addItem(name, channelModeBox.getNumItems() + 1);
-    channelModeBox.setSelectedId(1);
-    channelModeBox.setColour(juce::ComboBox::backgroundColourId, juce::Colour(0xFF1a1a2e));
-    channelModeBox.setColour(juce::ComboBox::textColourId, juce::Colour(0xFFe0e0ff));
-    addAndMakeVisible(channelModeBox);
-    channelModeBox.addListener(this);
-
-    soloBtn.setButtonText("S");
-    soloBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFe9c46a));
-    soloBtn.setColour(juce::ToggleButton::tickColourId, juce::Colour(0xFFe9c46a));
-    soloBtn.setClickingTogglesState(true);
-    addAndMakeVisible(soloBtn);
-    soloBtn.addListener(this);
-
-    bandBypassBtn.setButtonText("B");
-    bandBypassBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFa0a0c0));
-    bandBypassBtn.setClickingTogglesState(true);
-    addAndMakeVisible(bandBypassBtn);
-    bandBypassBtn.addListener(this);
-
-    dynBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFF2a9d8f));
-    dynBtn.setClickingTogglesState(true);
-    addAndMakeVisible(dynBtn);
-    dynBtn.addListener(this);
-
-    dynRangeSlider.setSliderStyle(juce::Slider::LinearHorizontal);
-    dynRangeSlider.setRange(-30.0, 30.0, 0.1);
-    dynRangeSlider.setValue(0.0, juce::dontSendNotification);
-    dynRangeSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFF2a9d8f));
-    dynRangeSlider.setColour(juce::Slider::trackColourId, juce::Colour(0xFF1a3a2e));
-    dynRangeSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFe0e0ff));
-    addAndMakeVisible(dynRangeSlider);
-    dynRangeSlider.setVisible(false);
-
-    dynThreshSlider.setSliderStyle(juce::Slider::LinearHorizontal);
-    dynThreshSlider.setRange(-60.0, 0.0, 0.1);
-    dynThreshSlider.setValue(-20.0, juce::dontSendNotification);
-    dynThreshSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFF2a9d8f));
-    dynThreshSlider.setColour(juce::Slider::trackColourId, juce::Colour(0xFF1a3a2e));
-    dynThreshSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFe0e0ff));
-    addAndMakeVisible(dynThreshSlider);
-    dynThreshSlider.setVisible(false);
-
-    dynAutoBtn.setButtonText("Auto");
-    dynAutoBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFF2a9d8f));
-    dynAutoBtn.setClickingTogglesState(true);
-    dynAutoBtn.setToggleState(true, juce::dontSendNotification);
-    addAndMakeVisible(dynAutoBtn);
-    dynAutoBtn.setVisible(false);
-    dynAutoBtn.addListener(this);
-
-    dynRangeLabel.setJustificationType(juce::Justification::centred);
-    dynRangeLabel.setFont(makeFont(9.0f));
-    dynRangeLabel.setColour(juce::Label::textColourId, juce::Colour(0xFF2a9d8f));
-    addAndMakeVisible(dynRangeLabel);
-    dynRangeLabel.setVisible(false);
-
-    dynThreshLabel.setJustificationType(juce::Justification::centred);
-    dynThreshLabel.setFont(makeFont(9.0f));
-    dynThreshLabel.setColour(juce::Label::textColourId, juce::Colour(0xFF2a9d8f));
-    addAndMakeVisible(dynThreshLabel);
-    dynThreshLabel.setVisible(false);
-
-    // Slope combo box
+    // Slope
     for (const auto& name : slopeNames)
         slopeBox.addItem(name, slopeBox.getNumItems() + 1);
     slopeBox.setSelectedId(4);
@@ -218,26 +127,123 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     slopeBox.setVisible(false);
     slopeBox.addListener(this);
 
-    slopeLabel.setJustificationType(juce::Justification::centred);
-    slopeLabel.setFont(makeFont(9.0f));
-    slopeLabel.setColour(juce::Label::textColourId, juce::Colour(0xFFa0a0c0));
-    addAndMakeVisible(slopeLabel);
-    slopeLabel.setVisible(false);
+    // Freq knob
+    freqSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
+    freqSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 52, 14);
+    freqSlider.setRange(20.0, 22000.0, 0.1);
+    freqSlider.setTextValueSuffix(" Hz");
+    freqSlider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xFFe94560));
+    freqSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFFe94560));
+    freqSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFe0e0ff));
+    addAndMakeVisible(freqSlider);
+    freqSlider.setVisible(false);
+    freqSlider.addListener(this);
 
-    // SC Trigger button
+    // Gain knob
+    gainSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
+    gainSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 52, 14);
+    gainSlider.setRange(-30.0, 30.0, 0.01);
+    gainSlider.setTextValueSuffix(" dB");
+    gainSlider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xFF00b4d8));
+    gainSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFF00b4d8));
+    gainSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFe0e0ff));
+    addAndMakeVisible(gainSlider);
+    gainSlider.setVisible(false);
+    gainSlider.addListener(this);
+
+    // Q knob
+    qSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
+    qSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 52, 14);
+    qSlider.setRange(0.1, 10.0, 0.01);
+    qSlider.setSkewFactor(0.4);
+    qSlider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xFF533483));
+    qSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFF533483));
+    qSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFe0e0ff));
+    addAndMakeVisible(qSlider);
+    qSlider.setVisible(false);
+    qSlider.addListener(this);
+
+    // Channel mode
+    for (const auto& name : channelModeNames)
+        channelModeBox.addItem(name, channelModeBox.getNumItems() + 1);
+    channelModeBox.setSelectedId(1);
+    channelModeBox.setColour(juce::ComboBox::backgroundColourId, juce::Colour(0xFF1a1a2e));
+    channelModeBox.setColour(juce::ComboBox::textColourId, juce::Colour(0xFFe0e0ff));
+    addAndMakeVisible(channelModeBox);
+    channelModeBox.setVisible(false);
+    channelModeBox.addListener(this);
+
+    // Gain-Q interaction
+    gainQBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFa0a0c0));
+    gainQBtn.setColour(juce::ToggleButton::tickColourId, juce::Colour(0xFFe9c46a));
+    gainQBtn.setClickingTogglesState(true);
+    addAndMakeVisible(gainQBtn);
+    gainQBtn.setVisible(false);
+    gainQBtn.addListener(this);
+
+    // Prev / Next band
+    prevBandBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFa0a0c0));
+    prevBandBtn.setClickingTogglesState(false);
+    addAndMakeVisible(prevBandBtn);
+    prevBandBtn.setVisible(false);
+    prevBandBtn.addListener(this);
+
+    nextBandBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFa0a0c0));
+    nextBandBtn.setClickingTogglesState(false);
+    addAndMakeVisible(nextBandBtn);
+    nextBandBtn.setVisible(false);
+    nextBandBtn.addListener(this);
+
+    // Band number
+    bandNumberLabel.setJustificationType(juce::Justification::centred);
+    bandNumberLabel.setFont(makeBoldFont(11.0f));
+    bandNumberLabel.setColour(juce::Label::textColourId, juce::Colour(0xFFe0e0ff));
+    addAndMakeVisible(bandNumberLabel);
+    bandNumberLabel.setVisible(false);
+
+    // Delete
+    deleteBandBtn.setColour(juce::TextButton::textColourOffId, juce::Colour(0xFFe94560));
+    addAndMakeVisible(deleteBandBtn);
+    deleteBandBtn.setVisible(false);
+    deleteBandBtn.addListener(this);
+
+    // Dynamic EQ row
+    dynRangeSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
+    dynRangeSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 52, 14);
+    dynRangeSlider.setRange(-30.0, 30.0, 0.1);
+    dynRangeSlider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xFF2a9d8f));
+    dynRangeSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFF2a9d8f));
+    dynRangeSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFe0e0ff));
+    addAndMakeVisible(dynRangeSlider);
+    dynRangeSlider.setVisible(false);
+    dynRangeSlider.addListener(this);
+
+    dynThreshSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
+    dynThreshSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 52, 14);
+    dynThreshSlider.setRange(-60.0, 0.0, 0.1);
+    dynThreshSlider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xFF2a9d8f));
+    dynThreshSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFF2a9d8f));
+    dynThreshSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFe0e0ff));
+    addAndMakeVisible(dynThreshSlider);
+    dynThreshSlider.setVisible(false);
+    dynThreshSlider.addListener(this);
+
+    dynAutoBtn.setButtonText("Auto");
+    dynAutoBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFF2a9d8f));
+    dynAutoBtn.setClickingTogglesState(true);
+    dynAutoBtn.setToggleState(true, juce::dontSendNotification);
+    addAndMakeVisible(dynAutoBtn);
+    dynAutoBtn.setVisible(false);
+    dynAutoBtn.addListener(this);
+
+    scTriggerBtn.setButtonText("SC");
     scTriggerBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFf72585));
     scTriggerBtn.setClickingTogglesState(true);
     addAndMakeVisible(scTriggerBtn);
     scTriggerBtn.setVisible(false);
     scTriggerBtn.addListener(this);
 
-    scLabel.setJustificationType(juce::Justification::centred);
-    scLabel.setFont(makeFont(9.0f));
-    scLabel.setColour(juce::Label::textColourId, juce::Colour(0xFFf72585));
-    addAndMakeVisible(scLabel);
-    scLabel.setVisible(false);
-
-    // === Bottom bar ===
+    // === Bottom bar (global) ===
     phaseBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFe94560));
     phaseBtn.setClickingTogglesState(true);
     addAndMakeVisible(phaseBtn);
@@ -304,11 +310,15 @@ EeqEditor::~EeqEditor()
     qSlider.removeListener(this);
     typeBox.removeListener(this);
     channelModeBox.removeListener(this);
-    soloBtn.removeListener(this);
-    bandBypassBtn.removeListener(this);
-    dynBtn.removeListener(this);
-    dynAutoBtn.removeListener(this);
     slopeBox.removeListener(this);
+    bandBypassBtn.removeListener(this);
+    gainQBtn.removeListener(this);
+    prevBandBtn.removeListener(this);
+    nextBandBtn.removeListener(this);
+    deleteBandBtn.removeListener(this);
+    dynRangeSlider.removeListener(this);
+    dynThreshSlider.removeListener(this);
+    dynAutoBtn.removeListener(this);
     scTriggerBtn.removeListener(this);
     procModeBox.removeListener(this);
     freezeBtn.removeListener(this);
@@ -339,7 +349,7 @@ juce::Rectangle<float> EeqEditor::getPianoBounds() const
 
 juce::Rectangle<float> EeqEditor::getBottomBarBounds() const
 {
-    return getLocalBounds().toFloat().removeFromBottom(120);
+    return getLocalBounds().toFloat().removeFromBottom(40);
 }
 
 juce::Rectangle<float> EeqEditor::getDisplayBounds() const
@@ -348,7 +358,7 @@ juce::Rectangle<float> EeqEditor::getDisplayBounds() const
     b = b.reduced(36, 0);
     b.removeFromTop(36);
     b.removeFromBottom(24);
-    b.removeFromBottom(84);
+    b.removeFromBottom(40);
     return b;
 }
 
@@ -356,6 +366,29 @@ juce::Rectangle<float> EeqEditor::getMeterBounds() const
 {
     auto b = getLocalBounds().toFloat();
     return b.removeFromRight(16).reduced(0, 36);
+}
+
+juce::Rectangle<float> EeqEditor::getBandControlsBounds() const
+{
+    if (selectedBand < 0) return {};
+
+    auto display = getDisplayBounds();
+    float panelW = 540.0f;
+    float panelH = 56.0f;
+    if (selectedBand >= 0)
+    {
+        auto& apvts = processor.getAPVTS();
+        auto id = juce::String(selectedBand + 1);
+        bool dyn = apvts.getRawParameterValue("b" + id + "_dyn")->load() > 0.5f;
+        if (dyn) panelH = 86.0f;
+    }
+
+    float bandX = bandVisuals[selectedBand].x;
+    float px = juce::jmax(display.getX() + 4.0f,
+                          juce::jmin(bandX - panelW * 0.5f, display.getRight() - panelW - 4.0f));
+    float py = display.getBottom() - panelH - 4.0f;
+
+    return { px, py, panelW, panelH };
 }
 
 // ===================== Coordinate mapping =====================
@@ -415,10 +448,44 @@ void EeqEditor::selectBand(int idx)
 {
     selectedBand = idx;
     for (auto& bv : bandVisuals) { bv.selected = false; bv.soloed = false; bv.bypassed = false; }
-    if (idx >= 0 && idx < NUM_BANDS)
+
+    bool showPanel = (idx >= 0 && idx < NUM_BANDS);
+
+    freqSlider.setVisible(showPanel);
+    gainSlider.setVisible(showPanel);
+    qSlider.setVisible(showPanel);
+    typeBox.setVisible(showPanel);
+    channelModeBox.setVisible(showPanel);
+    bandBypassBtn.setVisible(showPanel);
+    prevBandBtn.setVisible(showPanel);
+    nextBandBtn.setVisible(showPanel);
+    bandNumberLabel.setVisible(showPanel);
+    deleteBandBtn.setVisible(showPanel);
+    gainQBtn.setVisible(showPanel);
+    slopeBox.setVisible(false);
+    dynRangeSlider.setVisible(false);
+    dynThreshSlider.setVisible(false);
+    dynAutoBtn.setVisible(false);
+    scTriggerBtn.setVisible(false);
+
+    if (showPanel)
     {
         bandVisuals[idx].selected = true;
         updateControlsFromBand(idx);
+    }
+}
+
+void EeqEditor::navigateBand(int direction)
+{
+    int start = selectedBand;
+    for (int i = 0; i < NUM_BANDS; ++i)
+    {
+        int check = (start + direction + i * direction + NUM_BANDS) % NUM_BANDS;
+        if (check != start && bandVisuals[check].active)
+        {
+            selectBand(check);
+            return;
+        }
     }
 }
 
@@ -433,8 +500,6 @@ void EeqEditor::updateControlsFromBand(int idx)
     float qNorm = apvts.getRawParameterValue("b" + id + "_q")->load();
     int typeIdx = (int)apvts.getRawParameterValue("b" + id + "_type")->load();
     int chIdx = (int)apvts.getRawParameterValue("b" + id + "_ch")->load();
-    bool active = apvts.getRawParameterValue("b" + id + "_active")->load() > 0.5f;
-    bool solo = apvts.getRawParameterValue("b" + id + "_solo")->load() > 0.5f;
     bool bypass = apvts.getRawParameterValue("b" + id + "_bypass")->load() > 0.5f;
     bool dyn = apvts.getRawParameterValue("b" + id + "_dyn")->load() > 0.5f;
     float dynR = apvts.getRawParameterValue("b" + id + "_dynRange")->load();
@@ -448,27 +513,21 @@ void EeqEditor::updateControlsFromBand(int idx)
     qSlider.setValue(qNorm, juce::dontSendNotification);
     typeBox.setSelectedId(typeIdx + 1, juce::dontSendNotification);
     channelModeBox.setSelectedId(chIdx + 1, juce::dontSendNotification);
-    dynBtn.setToggleState(dyn, juce::dontSendNotification);
-    soloBtn.setToggleState(solo, juce::dontSendNotification);
     bandBypassBtn.setToggleState(bypass, juce::dontSendNotification);
+    slopeBox.setSelectedId(slopeIdx + 1, juce::dontSendNotification);
     dynRangeSlider.setValue(dynR, juce::dontSendNotification);
     dynThreshSlider.setValue(dynT, juce::dontSendNotification);
     dynAutoBtn.setToggleState(dynA, juce::dontSendNotification);
-    slopeBox.setSelectedId(slopeIdx + 1, juce::dontSendNotification);
     scTriggerBtn.setToggleState(sc, juce::dontSendNotification);
-
-    bool dynVisible = dyn;
-    dynRangeSlider.setVisible(dynVisible);
-    dynThreshSlider.setVisible(dynVisible);
-    dynAutoBtn.setVisible(dynVisible);
-    dynRangeLabel.setVisible(dynVisible);
-    dynThreshLabel.setVisible(dynVisible);
+    bandNumberLabel.setText(juce::String(idx + 1), juce::dontSendNotification);
 
     bool isCutType = (typeIdx == 3 || typeIdx == 4);
     slopeBox.setVisible(isCutType);
-    slopeLabel.setVisible(isCutType);
+
+    dynRangeSlider.setVisible(dyn);
+    dynThreshSlider.setVisible(dyn);
+    dynAutoBtn.setVisible(dyn);
     scTriggerBtn.setVisible(dyn);
-    scLabel.setVisible(dyn);
 }
 
 void EeqEditor::updateBandFromControls(int idx)
@@ -493,18 +552,15 @@ void EeqEditor::updateBandFromControls(int idx)
         apvts.getParameter("b" + id + "_type")->convertTo0to1(type));
     apvts.getParameter("b" + id + "_ch")->setValueNotifyingHost(
         apvts.getParameter("b" + id + "_ch")->convertTo0to1(ch));
-
-    if (dynBtn.getToggleState())
-    {
-        apvts.getParameter("b" + id + "_dynRange")->setValueNotifyingHost(
-            apvts.getParameter("b" + id + "_dynRange")->convertTo0to1((float)dynRangeSlider.getValue()));
-        apvts.getParameter("b" + id + "_dynThresh")->setValueNotifyingHost(
-            apvts.getParameter("b" + id + "_dynThresh")->convertTo0to1((float)dynThreshSlider.getValue()));
-    }
     apvts.getParameter("b" + id + "_slope")->setValueNotifyingHost(
         apvts.getParameter("b" + id + "_slope")->convertTo0to1(slopeBox.getSelectedId() - 1));
     apvts.getParameter("b" + id + "_sc")->setValueNotifyingHost(
         scTriggerBtn.getToggleState() ? 1.0f : 0.0f);
+
+    apvts.getParameter("b" + id + "_dynRange")->setValueNotifyingHost(
+        apvts.getParameter("b" + id + "_dynRange")->convertTo0to1((float)dynRangeSlider.getValue()));
+    apvts.getParameter("b" + id + "_dynThresh")->setValueNotifyingHost(
+        apvts.getParameter("b" + id + "_dynThresh")->convertTo0to1((float)dynThreshSlider.getValue()));
 }
 
 void EeqEditor::updateBandFromMouse(int band, float mx, float my)
@@ -569,6 +625,7 @@ void EeqEditor::mouseDown(const juce::MouseEvent& e)
     float mx = e.position.x;
     float my = e.position.y;
 
+    // Click outside display
     if (!display.contains(mx, my))
     {
         auto piano = getPianoBounds();
@@ -602,6 +659,11 @@ void EeqEditor::mouseDown(const juce::MouseEvent& e)
         }
         return;
     }
+
+    // Click on floating panel — don't deselect
+    auto panelBounds = getBandControlsBounds();
+    if (panelBounds.toFloat().contains(mx, my))
+        return;
 
     int hit = findBandAt(mx, my);
 
@@ -646,18 +708,18 @@ void EeqEditor::mouseDown(const juce::MouseEvent& e)
                 }
                 else if (result == 100)
                 {
-                    bool s = soloBtn.getToggleState();
-                    soloBtn.setToggleState(!s, juce::sendNotification);
+                    bool s = apvts.getRawParameterValue("b" + id + "_solo")->load() > 0.5f;
+                    apvts.getParameter("b" + id + "_solo")->setValueNotifyingHost(s ? 0.0f : 1.0f);
                 }
                 else if (result == 101)
                 {
-                    bool b = bandBypassBtn.getToggleState();
-                    bandBypassBtn.setToggleState(!b, juce::sendNotification);
+                    bool b = apvts.getRawParameterValue("b" + id + "_bypass")->load() > 0.5f;
+                    apvts.getParameter("b" + id + "_bypass")->setValueNotifyingHost(b ? 0.0f : 1.0f);
                 }
                 else if (result == 102)
                 {
-                    bool d = dynBtn.getToggleState();
-                    dynBtn.setToggleState(!d, juce::sendNotification);
+                    bool d = apvts.getRawParameterValue("b" + id + "_dyn")->load() > 0.5f;
+                    apvts.getParameter("b" + id + "_dyn")->setValueNotifyingHost(d ? 0.0f : 1.0f);
                 }
                 else if (result == 200)
                 {
@@ -728,16 +790,17 @@ void EeqEditor::mouseDown(const juce::MouseEvent& e)
     }
     else
     {
+        // Deselect all
+        selectBand(-1);
+
         float freq = xToFreq(mx, display);
         float gain = yToGain(my, display);
 
-        // Spectrum Grab: check if clicking near the EQ curve
         float curveMagDB = 20.0f * std::log10(std::max(processor.getEqualizer().getMagnitudeAtFreq(freq), 1e-10f));
         float distToCurve = std::abs(gain - curveMagDB);
 
         if (distToCurve < 4.0f)
         {
-            // Near the EQ curve — start spectrum grab
             spectrumGrabbing = true;
             spectrumGrabFreq = freq;
             spectrumGrabGain = curveMagDB;
@@ -745,7 +808,6 @@ void EeqEditor::mouseDown(const juce::MouseEvent& e)
         }
         else
         {
-            // Far from curve — just add a band at click position
             addBandAt(freq, gain);
         }
     }
@@ -755,7 +817,6 @@ void EeqEditor::mouseDrag(const juce::MouseEvent& e)
 {
     if (spectrumGrabbing && selectedBand >= 0)
     {
-        // Spectrum grab: update the band to follow the spectrum curve
         updateBandFromMouse(selectedBand, e.position.x, e.position.y);
         return;
     }
@@ -764,7 +825,6 @@ void EeqEditor::mouseDrag(const juce::MouseEvent& e)
     {
         updateBandFromMouse(selectedBand, e.position.x, e.position.y);
 
-        // Multi-band drag
         if (e.mods.isCommandDown() && multiSelectedBands.size() > 1)
         {
             for (int b : multiSelectedBands)
@@ -807,13 +867,11 @@ void EeqEditor::mouseWheelMove(const juce::MouseEvent& e, const juce::MouseWheel
 
     if (selectedBand < 0)
     {
-        // Change display range
         float range = processor.getDisplayRange();
         range = juce::jlimit(6.0f, 60.0f, range - wheel.deltaY * 3.0f);
         processor.setDisplayRange(range);
         return;
     }
-    auto id = juce::String(selectedBand + 1);
 
     if (e.mods.isAltDown())
     {
@@ -905,7 +963,6 @@ void EeqEditor::comboBoxChanged(juce::ComboBox* box)
                 int typeIdx = typeBox.getSelectedId() - 1;
                 bool isCutType = (typeIdx == 3 || typeIdx == 4);
                 slopeBox.setVisible(isCutType);
-                slopeLabel.setVisible(isCutType);
             }
         }
     }
@@ -944,13 +1001,6 @@ void EeqEditor::buttonClicked(juce::Button* btn)
     else if (btn == &autoGainBtn)
         processor.setAutoGainEnabled(autoGainBtn.getToggleState());
 
-    else if (btn == &soloBtn && selectedBand >= 0)
-    {
-        auto id = juce::String(selectedBand + 1);
-        processor.getAPVTS().getParameter("b" + id + "_solo")->setValueNotifyingHost(
-            soloBtn.getToggleState() ? 1.0f : 0.0f);
-        bandVisuals[selectedBand].soloed = soloBtn.getToggleState();
-    }
     else if (btn == &bandBypassBtn && selectedBand >= 0)
     {
         auto id = juce::String(selectedBand + 1);
@@ -958,32 +1008,33 @@ void EeqEditor::buttonClicked(juce::Button* btn)
             bandBypassBtn.getToggleState() ? 1.0f : 0.0f);
         bandVisuals[selectedBand].bypassed = bandBypassBtn.getToggleState();
     }
-    else if (btn == &dynBtn && selectedBand >= 0)
+    else if (btn == &prevBandBtn)
     {
-        auto id = juce::String(selectedBand + 1);
-        processor.pushUndoState();
-        processor.getAPVTS().getParameter("b" + id + "_dyn")->setValueNotifyingHost(
-            dynBtn.getToggleState() ? 1.0f : 0.0f);
-        bool vis = dynBtn.getToggleState();
-        dynRangeSlider.setVisible(vis);
-        dynThreshSlider.setVisible(vis);
-        dynAutoBtn.setVisible(vis);
-        dynRangeLabel.setVisible(vis);
-        dynThreshLabel.setVisible(vis);
-        scTriggerBtn.setVisible(vis);
-        scLabel.setVisible(vis);
+        navigateBand(-1);
     }
-    else if (btn == &scTriggerBtn && selectedBand >= 0)
+    else if (btn == &nextBandBtn)
     {
+        navigateBand(1);
+    }
+    else if (btn == &deleteBandBtn && selectedBand >= 0)
+    {
+        processor.pushUndoState();
         auto id = juce::String(selectedBand + 1);
-        processor.getAPVTS().getParameter("b" + id + "_sc")->setValueNotifyingHost(
-            scTriggerBtn.getToggleState() ? 1.0f : 0.0f);
+        processor.getAPVTS().getParameter("b" + id + "_active")->setValueNotifyingHost(0.0f);
+        bandVisuals[selectedBand].active = false;
+        selectBand(-1);
     }
     else if (btn == &dynAutoBtn && selectedBand >= 0)
     {
         auto id = juce::String(selectedBand + 1);
         processor.getAPVTS().getParameter("b" + id + "_dynAuto")->setValueNotifyingHost(
             dynAutoBtn.getToggleState() ? 1.0f : 0.0f);
+    }
+    else if (btn == &scTriggerBtn && selectedBand >= 0)
+    {
+        auto id = juce::String(selectedBand + 1);
+        processor.getAPVTS().getParameter("b" + id + "_sc")->setValueNotifyingHost(
+            scTriggerBtn.getToggleState() ? 1.0f : 0.0f);
     }
     else if (btn == &eqMatchBtn)
     {
@@ -1036,6 +1087,7 @@ void EeqEditor::paint(juce::Graphics& g)
     drawBandInfo(g, display);
     drawPianoRoll(g, getPianoBounds());
     drawOutputMeter(g, getMeterBounds());
+    drawBandControls(g, display);
 }
 
 void EeqEditor::drawGrid(juce::Graphics& g, juce::Rectangle<float> d)
@@ -1112,6 +1164,7 @@ void EeqEditor::drawSpectrum(juce::Graphics& g, juce::Rectangle<float> d)
     filledPath.lineTo(d.getX(), d.getBottom());
     filledPath.closeSubPath();
 
+    // Spectrum gradient coloring by frequency
     for (int px = 0; px < (int)d.getWidth(); px += 3)
     {
         float freq = xToFreq((float)px, d);
@@ -1133,7 +1186,6 @@ void EeqEditor::drawSpectrum(juce::Graphics& g, juce::Rectangle<float> d)
     g.setColour(juce::Colour(0xFF00ff88).withAlpha(0.5f));
     g.strokePath(path, juce::PathStrokeType(1.5f));
 
-    // Peak hold
     const auto& peaks = processor.getSpectrumAnalyzer().peakHold;
     for (int px = 0; px < (int)d.getWidth(); px += 2)
     {
@@ -1147,7 +1199,6 @@ void EeqEditor::drawSpectrum(juce::Graphics& g, juce::Rectangle<float> d)
         g.drawLine(d.getX() + (float)px, y, d.getX() + (float)px + 1.0f, y, 1.0f);
     }
 
-    // EQ Match capture spectrum
     if (eqMatchCapturing && processor.getSpectrumAnalyzer().isCapturing())
     {
         const auto& cap = processor.getSpectrumAnalyzer().getCaptureSpectrum();
@@ -1228,21 +1279,6 @@ void EeqEditor::drawBandNodes(juce::Graphics& g, juce::Rectangle<float> d)
         {
             g.setColour(col.withAlpha(0.2f));
             g.fillEllipse(x - radius - 6, y - radius - 6, (radius + 6) * 2, (radius + 6) * 2);
-
-            int typeIdx = (int)apvts.getRawParameterValue("b" + id + "_type")->load();
-            int chIdx = (int)apvts.getRawParameterValue("b" + id + "_ch")->load();
-            juce::String info = filterTypeNames[juce::jmin(typeIdx, 8)] + "\n"
-                + channelModeNames[juce::jmin(chIdx, 4)] + "\n"
-                + juce::String(freq, 0) + " Hz\n"
-                + juce::String(gain, 1) + " dB\nQ: " + juce::String(q, 2);
-            if (typeIdx == 3 || typeIdx == 4)
-            {
-                int slopeI = (int)apvts.getRawParameterValue("b" + id + "_slope")->load();
-                info += "\n" + slopeNames[juce::jmin(slopeI, 7)];
-            }
-            g.setFont(makeFont(9.0f));
-            g.setColour(col.withAlpha(0.7f));
-            g.drawText(info, x - 45, y - radius - 58, 90, 54, juce::Justification::centred);
         }
 
         if (bandVisuals[i].hovered && !bandVisuals[i].selected)
@@ -1262,14 +1298,12 @@ void EeqEditor::drawBandNodes(juce::Graphics& g, juce::Rectangle<float> d)
             g.drawEllipse(x - radius - 1, y - radius - 1, (radius + 1) * 2, (radius + 1) * 2, 1.5f);
         }
 
-        // Bypass indicator
         if (bandVisuals[i].bypassed)
         {
             g.setColour(juce::Colour(0xFFa0a0c0).withAlpha(0.5f));
             g.drawEllipse(x - 3, y - 3, 6, 6, 2.0f);
         }
 
-        // Solo indicator
         if (bandVisuals[i].soloed)
         {
             g.setColour(juce::Colour(0xFFe9c46a));
@@ -1277,7 +1311,6 @@ void EeqEditor::drawBandNodes(juce::Graphics& g, juce::Rectangle<float> d)
             g.drawText("S", x - 4, y - radius - 10, 8, 10, juce::Justification::centred);
         }
 
-        // Dynamic indicator
         bool dyn = apvts.getRawParameterValue("b" + id + "_dyn")->load() > 0.5f;
         if (dyn)
         {
@@ -1286,7 +1319,6 @@ void EeqEditor::drawBandNodes(juce::Graphics& g, juce::Rectangle<float> d)
             g.drawText("D", x + radius + 2, y - 4, 8, 8, juce::Justification::centred);
         }
 
-        // SC trigger indicator
         bool sc = apvts.getRawParameterValue("b" + id + "_sc")->load() > 0.5f;
         if (sc)
         {
@@ -1311,13 +1343,52 @@ void EeqEditor::drawBandInfo(juce::Graphics& g, juce::Rectangle<float> d)
     g.drawText(juce::String((int)range) + " dB range",
                d.getRight() - 70, d.getY() + 2, 66, 14, juce::Justification::centredRight);
 
-    // Zoom indicator
     if (hZoom > 1.05f)
     {
         g.setColour(juce::Colour(0xFFe94560).withAlpha(0.6f));
         g.setFont(makeFont(8.0f));
         g.drawText("x" + juce::String(hZoom, 1), d.getX() + 80, d.getY() + 2, 40, 14, juce::Justification::centredLeft);
     }
+}
+
+// ===================== Floating Band Controls Panel =====================
+
+void EeqEditor::drawBandControls(juce::Graphics& g, juce::Rectangle<float> display)
+{
+    if (selectedBand < 0) return;
+    auto panel = getBandControlsBounds();
+    if (panel.isEmpty()) return;
+
+    // Draw semi-transparent background
+    g.setColour(juce::Colour(0xDD12121e));
+    g.fillRoundedRectangle(panel, 6.0f);
+    g.setColour(juce::Colour(0xFFe94560).withAlpha(0.4f));
+    g.drawRoundedRectangle(panel, 6.0f, 1.0f);
+
+    // Draw vertical connector line from band node to panel
+    if (selectedBand >= 0 && selectedBand < NUM_BANDS && bandVisuals[selectedBand].active)
+    {
+        float bandX = bandVisuals[selectedBand].x;
+        float bandY = bandVisuals[selectedBand].y;
+        g.setColour(juce::Colour(0xFFe94560).withAlpha(0.3f));
+        g.drawLine(bandX, bandY + qToRadius(0.707f), bandX, panel.getY(), 1.0f);
+    }
+
+    auto col = bandColours[selectedBand % 24];
+
+    // Small colour indicator
+    g.setColour(col);
+    g.fillRoundedRectangle(panel.getX() + 8, panel.getY() + 6, 4, panel.getHeight() - 12, 2.0f);
+
+    // Labels above knobs (row 1)
+    float ly = panel.getY() + 4;
+    g.setColour(juce::Colour(0xFF8a8aae));
+    g.setFont(makeFont(8.0f));
+
+    // We don't draw text labels for knobs — the knobs have TextBoxBelow
+    // Just draw small labels for the combo boxes
+    auto typeArea = panel.reduced(0).removeFromTop(panel.getHeight());
+    (void)typeArea;
 }
 
 void EeqEditor::drawPianoRoll(juce::Graphics& g, juce::Rectangle<float> d)
@@ -1354,7 +1425,6 @@ void EeqEditor::drawPianoRoll(juce::Graphics& g, juce::Rectangle<float> d)
         g.setColour(juce::Colour(0xFF1a1a2e));
         g.drawRect(x1, d.getY(), x2 - x1, d.getHeight(), 0.5f);
 
-        // Draw key name at C notes
         if (noteInOctave == 0 && (x2 - x1) > 14)
         {
             int octave = (key / 12) - 1;
@@ -1406,7 +1476,7 @@ void EeqEditor::resized()
     auto bounds = getLocalBounds();
     auto topBar = bounds.removeFromTop(36);
     auto pianoArea = bounds.removeFromBottom(24);
-    auto bottomBar = bounds.removeFromBottom(84);
+    auto bottomBar = bounds.removeFromBottom(40);
     auto meterArea = bounds.removeFromRight(16);
     (void)meterArea;
 
@@ -1426,60 +1496,67 @@ void EeqEditor::resized()
     eqMatchCaptureBtn.setBounds(x, topBar.getY() + 6, 58, 24);
     x += 64;
     eqMatchApplyBtn.setBounds(x, topBar.getY() + 6, 42, 24);
-    x += 50;
 
-    auto rightSide = topBar.removeFromRight(0);
     undoBtn.setBounds(topBar.getRight() - 120, topBar.getY() + 6, 36, 24);
     redoBtn.setBounds(topBar.getRight() - 80, topBar.getY() + 6, 36, 24);
     abBtn.setBounds(topBar.getRight() - 40, topBar.getY() + 6, 24, 24);
-    fullScreenBtn.setBounds(topBar.getRight() - 12, topBar.getY() + 6, 0, 0);
 
-    // Band controls
-    int cx = bottomBar.getX() + 8;
-    int cy = bottomBar.getY() + 4;
-    freqSlider.setBounds(cx, cy, 60, 50);
-    freqLabel.setBounds(cx, cy, 60, 10);
-    cx += 66;
-    gainSlider.setBounds(cx, cy, 60, 50);
-    gainLabel.setBounds(cx, cy, 60, 10);
-    cx += 66;
-    qSlider.setBounds(cx, cy, 60, 50);
-    qLabel.setBounds(cx, cy, 60, 10);
-    cx += 68;
-    typeBox.setBounds(cx, cy + 4, 72, 20);
-    typeLabel.setBounds(cx, cy, 72, 10);
-    cx += 80;
-    channelModeBox.setBounds(cx, cy + 4, 62, 20);
-    chLabel.setBounds(cx, cy, 62, 10);
-    cx += 68;
-    soloBtn.setBounds(cx, cy + 4, 24, 20);
-    bandBypassBtn.setBounds(cx + 28, cy + 4, 24, 20);
-    dynBtn.setBounds(cx + 56, cy + 4, 34, 20);
-
-    cx += 100;
-    dynRangeLabel.setBounds(cx, cy, 36, 10);
-    dynRangeSlider.setBounds(cx, cy + 10, 80, 16);
-    dynThreshLabel.setBounds(cx + 88, cy, 38, 10);
-    dynThreshSlider.setBounds(cx + 88, cy + 10, 80, 16);
-    dynAutoBtn.setBounds(cx + 176, cy + 8, 36, 18);
-
-    slopeLabel.setBounds(cx + 218, cy, 36, 10);
-    slopeBox.setBounds(cx + 218, cy + 4, 52, 20);
-    scLabel.setBounds(cx + 276, cy, 20, 10);
-    scTriggerBtn.setBounds(cx + 276, cy + 4, 24, 20);
-
-    // Bottom bar
+    // Bottom bar (global only)
     int bx = bottomBar.getX() + 8;
-    int by = bottomBar.getY() + 48;
+    int by = bottomBar.getY() + 8;
     phaseBtn.setBounds(bx, by, 50, 22);
     bx += 58;
     autoGainBtn.setBounds(bx, by, 36, 22);
     bx += 44;
-    panLabel.setBounds(bx, by, 28, 10);
-    outputPanSlider.setBounds(bx, by + 12, 100, 14);
+    panLabel.setBounds(bx, by - 2, 28, 10);
+    outputPanSlider.setBounds(bx, by + 10, 100, 14);
     bx += 110;
-    gainScaleLabel.setBounds(bx, by, 34, 10);
-    gainScaleSlider.setBounds(bx, by + 12, 100, 14);
+    gainScaleLabel.setBounds(bx, by - 2, 34, 10);
+    gainScaleSlider.setBounds(bx, by + 10, 100, 14);
+
+    // === Floating band controls layout ===
+    auto panel = getBandControlsBounds();
+    if (!panel.isEmpty() && selectedBand >= 0)
+    {
+        float px = panel.getX() + 18.0f;
+        float py = panel.getY() + 4.0f;
+        float knobW = 52.0f;
+        float knobH = 48.0f;
+        float smallBtn = 20.0f;
+
+        // Row 1: Bypass | Type | Slope | Freq | Gain | Q | Ch | GQ | Prev | # | Next | Del
+        bandBypassBtn.setBounds(px, py, smallBtn, smallBtn);
+        px += 24;
+        typeBox.setBounds(px, py, 68, smallBtn);
+        px += 72;
+        slopeBox.setBounds(px, py, 48, smallBtn);
+        px += 52;
+        freqSlider.setBounds(px, py - 2, knobW, knobH);
+        px += knobW + 4;
+        gainSlider.setBounds(px, py - 2, knobW, knobH);
+        px += knobW + 4;
+        qSlider.setBounds(px, py - 2, knobW, knobH);
+        px += knobW + 4;
+        channelModeBox.setBounds(px, py, 56, smallBtn);
+        px += 60;
+        gainQBtn.setBounds(px, py, smallBtn, smallBtn);
+        px += 24;
+        prevBandBtn.setBounds(px, py + 2, 18, 16);
+        bandNumberLabel.setBounds(px + 20, py, 16, smallBtn);
+        nextBandBtn.setBounds(px + 38, py + 2, 18, 16);
+        px += 62;
+        deleteBandBtn.setBounds(px, py, smallBtn, smallBtn);
+
+        // Row 2 (dynamic EQ): Range | Thresh | Auto | SC
+        if (dynRangeSlider.isVisible())
+        {
+            float dy = py + knobH - 2;
+            dynRangeSlider.setBounds(panel.getX() + 18, dy, knobW, knobH - 8);
+            dynThreshSlider.setBounds(panel.getX() + 18 + knobW + 4, dy, knobW, knobH - 8);
+            dynAutoBtn.setBounds(panel.getX() + 18 + (knobW + 4) * 2, dy + 8, 36, 18);
+            scTriggerBtn.setBounds(panel.getX() + 18 + (knobW + 4) * 2 + 40, dy + 8, 28, 18);
+        }
+    }
 
     // Bring interactive elements to front
     presetSelector.toFront(true);
@@ -1491,6 +1568,7 @@ void EeqEditor::resized()
     qSlider.toFront(true);
     typeBox.toFront(true);
     channelModeBox.toFront(true);
+    slopeBox.toFront(true);
 }
 
 // ===================== Presets =====================
