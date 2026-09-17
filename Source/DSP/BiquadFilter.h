@@ -74,15 +74,32 @@ struct DynamicState
     float releaseMs = 100.0f;
 };
 
+enum class FilterSlope
+{
+    Slope6 = 0,
+    Slope12,
+    Slope18,
+    Slope24,
+    Slope30,
+    Slope36,
+    Slope42,
+    Slope48
+};
+
+inline int slopeToStages(FilterSlope s) { return ((int)s + 1); }
+inline float slopeToDB(FilterSlope s) { return 6.0f * ((int)s + 1); }
+
 struct BandState
 {
     float freq = 1000.0f;
     float gain = 0.0f;
     float q = 0.707f;
     FilterType type = FilterType::Bell;
+    FilterSlope slope = FilterSlope::Slope24;
     bool active = false;
     bool bypassed = false;
     bool soloed = false;
     ChannelMode channelMode = ChannelMode::Stereo;
     DynamicState dynamic;
+    bool scTrigger = false;
 };

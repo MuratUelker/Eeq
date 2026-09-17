@@ -91,6 +91,13 @@ private:
     juce::ToggleButton dynAutoBtn{"Auto"};
     juce::Label dynRangeLabel{"", "Range"}, dynThreshLabel{"", "Thresh"};
 
+    // Slope and SC trigger
+    juce::ComboBox slopeBox;
+    juce::Label slopeLabel{"", "Slope"};
+    juce::ToggleButton scTriggerBtn{"SC"};
+    juce::Label scLabel{"", "SC"};
+    static const juce::StringArray slopeNames;
+
     // === Bottom bar controls ===
     juce::ToggleButton phaseBtn{"Phase"};
     juce::ToggleButton autoGainBtn{"AG"};

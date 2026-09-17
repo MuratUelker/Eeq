@@ -44,6 +44,11 @@ juce::AudioProcessorValueTreeState::ParameterLayout EeqProcessor::createLayout()
             juce::NormalisableRange<float>(-60.0f, 0.0f, 0.1f), -20.0f));
         layout.add(std::make_unique<juce::AudioParameterBool>(
             juce::ParameterID{"b" + id + "_dynAuto", 1}, "Band " + id + " Auto Threshold", true));
+        layout.add(std::make_unique<juce::AudioParameterChoice>(
+            juce::ParameterID{"b" + id + "_slope", 1}, "Band " + id + " Slope",
+            juce::StringArray{"6 dB", "12 dB", "18 dB", "24 dB", "30 dB", "36 dB", "42 dB", "48 dB"}, 3));
+        layout.add(std::make_unique<juce::AudioParameterBool>(
+            juce::ParameterID{"b" + id + "_sc", 1}, "Band " + id + " SC Trigger", false));
     }
 
     for (int i = 0; i < MAX_BANDS; ++i)
@@ -113,6 +118,9 @@ void EeqProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuff
         state.dynamic.dynamicRange = apvts.getRawParameterValue("b" + id + "_dynRange")->load();
         state.dynamic.threshold = apvts.getRawParameterValue("b" + id + "_dynThresh")->load();
         state.dynamic.autoThreshold = apvts.getRawParameterValue("b" + id + "_dynAuto")->load() > 0.5f;
+        state.scTrigger = apvts.getRawParameterValue("b" + id + "_sc")->load() > 0.5f;
+        int slopeIdx = (int)apvts.getRawParameterValue("b" + id + "_slope")->load();
+        state.slope = (FilterSlope)juce::jlimit(0, 7, slopeIdx);
 
         FilterType types[] = {FilterType::Bell, FilterType::LowShelf, FilterType::HighShelf,
                               FilterType::LowCut, FilterType::HighCut, FilterType::Notch,
@@ -193,7 +201,18 @@ void EeqProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuff
     if (getTotalNumInputChannels() > 2)
     {
         auto* scLeft = buffer.getWritePointer(2);
+        auto* scRight = buffer.getNumChannels() > 3 ? buffer.getWritePointer(3) : scLeft;
         sidechainSpectrum.pushSamples(scLeft, numSamples);
+
+        float scSumL = 0.0f, scSumR = 0.0f;
+        for (int s = 0; s < numSamples; ++s)
+        {
+            scSumL += scLeft[s] * scLeft[s];
+            scSumR += scRight[s] * scRight[s];
+        }
+        float scRmsL = std::sqrt(scSumL / (float)numSamples);
+        float scRmsR = std::sqrt(scSumR / (float)numSamples);
+        equalizer.setSidechainLevels(scRmsL, scRmsR);
     }
 }
 
@@ -213,6 +232,8 @@ EQSnapshot EeqProcessor::captureState()
         s.dynEnabled[i] = apvts.getRawParameterValue("b" + id + "_dyn")->load() > 0.5f;
         s.dynRange[i] = apvts.getRawParameterValue("b" + id + "_dynRange")->load();
         s.dynThreshold[i] = apvts.getRawParameterValue("b" + id + "_dynThresh")->load();
+        s.scTriggers[i] = apvts.getRawParameterValue("b" + id + "_sc")->load() > 0.5f;
+        s.slopes[i] = (int)apvts.getRawParameterValue("b" + id + "_slope")->load();
         s.solos[i] = apvts.getRawParameterValue("b" + id + "_solo")->load() > 0.5f;
         s.bypasses[i] = apvts.getRawParameterValue("b" + id + "_bypass")->load() > 0.5f;
     }
@@ -241,6 +262,9 @@ void EeqProcessor::applyState(const EQSnapshot& s)
             apvts.getParameter("b" + id + "_dynRange")->convertTo0to1(s.dynRange[i]));
         apvts.getParameter("b" + id + "_dynThresh")->setValueNotifyingHost(
             apvts.getParameter("b" + id + "_dynThresh")->convertTo0to1(s.dynThreshold[i]));
+        apvts.getParameter("b" + id + "_sc")->setValueNotifyingHost(s.scTriggers[i] ? 1.0f : 0.0f);
+        apvts.getParameter("b" + id + "_slope")->setValueNotifyingHost(
+            apvts.getParameter("b" + id + "_slope")->convertTo0to1(s.slopes[i]));
         apvts.getParameter("b" + id + "_solo")->setValueNotifyingHost(s.solos[i] ? 1.0f : 0.0f);
         apvts.getParameter("b" + id + "_bypass")->setValueNotifyingHost(s.bypasses[i] ? 1.0f : 0.0f);
     }

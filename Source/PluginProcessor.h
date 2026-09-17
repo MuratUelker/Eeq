@@ -10,11 +10,13 @@ struct EQSnapshot
     std::array<float, MAX_BANDS> gains{};
     std::array<float, MAX_BANDS> qs{};
     std::array<int, MAX_BANDS> types{};
+    std::array<int, MAX_BANDS> slopes{};
     std::array<bool, MAX_BANDS> actives{};
     std::array<int, MAX_BANDS> channelModes{};
     std::array<bool, MAX_BANDS> dynEnabled{};
     std::array<float, MAX_BANDS> dynRange{};
     std::array<float, MAX_BANDS> dynThreshold{};
+    std::array<bool, MAX_BANDS> scTriggers{};
     std::array<bool, MAX_BANDS> solos{};
     std::array<bool, MAX_BANDS> bypasses{};
     float gainScale = 1.0f;

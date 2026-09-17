@@ -30,10 +30,14 @@ public:
     void setGainScale(float scale) { gainScale = scale; }
     float getGainScale() const { return gainScale; }
 
+    void setSidechainLevels(float scL, float scR) { scLevelL = scL; scLevelR = scR; }
+
     static constexpr int NUM_BANDS = MAX_BANDS;
 
 private:
-    std::array<BiquadFilter, MAX_BANDS> filters;
+    static constexpr int MAX_FILTERS_PER_BAND = 8;
+
+    std::array<std::array<BiquadFilter, MAX_FILTERS_PER_BAND>, MAX_BANDS> filterStages;
     std::array<BandState, MAX_BANDS> bands;
     double currentSampleRate = 44100.0;
     int blockSize = 512;
@@ -42,6 +46,8 @@ private:
 
     // Dynamic EQ envelope
     std::array<float, MAX_BANDS> envelope{};
+    float scLevelL = 0.0f;
+    float scLevelR = 0.0f;
 
     // Linear phase FFT
     static constexpr int FFT_SIZE = 4096;

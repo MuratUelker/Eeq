@@ -6,11 +6,11 @@ void Equalizer::prepare(double sampleRate, int samplesPerBlock)
 {
     currentSampleRate = sampleRate;
     blockSize = samplesPerBlock;
-    for (auto& f : filters)
-        f.prepare(sampleRate);
+    for (auto& band : filterStages)
+        for (auto& f : band)
+            f.prepare(sampleRate);
     envelope.fill(0.0f);
 
-    // Initialize window coefficients (Hann)
     for (int i = 0; i < FFT_SIZE; ++i)
         windowCoeffs[i] = 0.5f * (1.0f - std::cos(2.0f * 3.14159265f * (float)i / (float)(FFT_SIZE - 1)));
 
@@ -53,8 +53,22 @@ void Equalizer::setBand(int index, const BandState& state)
     if (state.active)
     {
         float scaledGain = state.gain * gainScale;
-        filters[index].setParams(state.freq, scaledGain, state.q, state.type);
+        bool isCutFilter = (state.type == FilterType::LowCut || state.type == FilterType::HighCut);
+        int numStages = isCutFilter ? slopeToStages(state.slope) : 1;
+
+        for (int s = 0; s < numStages; ++s)
+            filterStages[index][s].setParams(state.freq, scaledGain, state.q, state.type);
+
+        for (int s = numStages; s < MAX_FILTERS_PER_BAND; ++s)
+            filterStages[index][s].setParams(state.freq, 0.0f, state.q, FilterType::Bell);
     }
+}
+
+static void processChannelWithStages(BiquadFilter* stages, int numStages,
+                                     float* ch, int numSamples)
+{
+    for (int s = 0; s < numStages; ++s)
+        stages[s].processLeft(ch, numSamples);
 }
 
 void Equalizer::process(float* left, float* right, int numSamples)
@@ -73,30 +87,46 @@ void Equalizer::process(float* left, float* right, int numSamples)
         if (bands[i].dynamic.enabled)
         {
             float inputLevel = 0.0f;
-            for (int s = 0; s < numSamples; ++s)
-                inputLevel += left[s] * left[s];
-            inputLevel = std::sqrt(inputLevel / (float)numSamples);
+            if (bands[i].scTrigger && scLevelL > 0.0f)
+            {
+                inputLevel = 0.5f * (scLevelL + scLevelR);
+            }
+            else
+            {
+                for (int s = 0; s < numSamples; ++s)
+                    inputLevel += left[s] * left[s];
+                inputLevel = std::sqrt(inputLevel / (float)numSamples);
+            }
             processDynamicEQ(i, effectiveGain, inputLevel);
         }
 
-        filters[i].setParams(bands[i].freq, effectiveGain, bands[i].q, bands[i].type);
+        bool isCutFilter = (bands[i].type == FilterType::LowCut || bands[i].type == FilterType::HighCut);
+        int numStages = isCutFilter ? slopeToStages(bands[i].slope) : 1;
+
+        for (int s = 0; s < numStages; ++s)
+            filterStages[i][s].setParams(bands[i].freq, effectiveGain, bands[i].q, bands[i].type);
 
         switch (bands[i].channelMode)
         {
         case ChannelMode::Stereo:
-            filters[i].processStereo(left, right, numSamples);
+            for (int s = 0; s < numStages; ++s)
+                filterStages[i][s].processStereo(left, right, numSamples);
             break;
         case ChannelMode::Mid:
-            filters[i].processMidSide(left, right, numSamples, true);
+            for (int s = 0; s < numStages; ++s)
+                filterStages[i][s].processMidSide(left, right, numSamples, true);
             break;
         case ChannelMode::Side:
-            filters[i].processMidSide(left, right, numSamples, false);
+            for (int s = 0; s < numStages; ++s)
+                filterStages[i][s].processMidSide(left, right, numSamples, false);
             break;
         case ChannelMode::Left:
-            filters[i].processLeft(left, numSamples);
+            for (int s = 0; s < numStages; ++s)
+                filterStages[i][s].processLeft(left, numSamples);
             break;
         case ChannelMode::Right:
-            filters[i].processRight(right, numSamples);
+            for (int s = 0; s < numStages; ++s)
+                filterStages[i][s].processRight(right, numSamples);
             break;
         }
     }
@@ -104,7 +134,6 @@ void Equalizer::process(float* left, float* right, int numSamples)
 
 void Equalizer::fftInPlace(std::complex<float>* data, int n, bool inverse)
 {
-    // Bit-reversal permutation
     int bits = 0;
     for (int temp = n; temp > 1; temp >>= 1) ++bits;
 
@@ -117,7 +146,6 @@ void Equalizer::fftInPlace(std::complex<float>* data, int n, bool inverse)
             std::swap(data[i], data[j]);
     }
 
-    // Butterfly stages
     float sign = inverse ? 1.0f : -1.0f;
     for (int size = 2; size <= n; size *= 2)
     {
@@ -148,9 +176,33 @@ void Equalizer::fftInPlace(std::complex<float>* data, int n, bool inverse)
     }
 }
 
+static void computeBiquadResponse(float* b, float* a, std::complex<float>* response, int numBins, float sampleRate)
+{
+    for (int k = 0; k < numBins; ++k)
+    {
+        float w = 2.0f * 3.14159265f * (float)k / (float)(numBins * 2);
+        float cosW = std::cos(w);
+        float sinW = std::sin(w);
+        float cos2W = std::cos(2.0f * w);
+        float sin2W = std::sin(2.0f * w);
+
+        float numR = b[0] + b[1] * cosW + b[2] * cos2W;
+        float numI = -(b[1] * sinW + b[2] * sin2W);
+        float denR = 1.0f + a[1] * cosW + a[2] * cos2W;
+        float denI = -(a[1] * sinW + a[2] * sin2W);
+
+        float denMag2 = denR * denR + denI * denI;
+        if (denMag2 < 1e-20f) denMag2 = 1e-20f;
+
+        float hR = (numR * denR + numI * denI) / denMag2;
+        float hI = (numI * denR - numR * denI) / denMag2;
+
+        response[k] *= std::complex<float>(hR, hI);
+    }
+}
+
 void Equalizer::computeEQFrequencyResponse(std::complex<float>* response, int numBins, float sampleRate)
 {
-    // Initialize to flat response
     for (int i = 0; i < numBins; ++i)
         response[i] = std::complex<float>(1.0f, 0.0f);
 
@@ -264,31 +316,14 @@ void Equalizer::computeEQFrequencyResponse(std::complex<float>* response, int nu
         }
 
         float invA0 = 1.0f / a0;
-        b0 *= invA0; b1 *= invA0; b2 *= invA0;
-        a1 *= invA0; a2 *= invA0;
+        float bn[3] = { b0 * invA0, b1 * invA0, b2 * invA0 };
+        float an[3] = { 1.0f, a1 * invA0, a2 * invA0 };
 
-        // Compute H(e^jw) for each FFT bin
-        for (int k = 0; k < numBins; ++k)
-        {
-            float w = 2.0f * 3.14159265f * (float)k / (float)(numBins * 2);
-            float cosW = std::cos(w);
-            float sinW = std::sin(w);
-            float cos2W = std::cos(2.0f * w);
-            float sin2W = std::sin(2.0f * w);
+        bool isCutFilter = (bands[b].type == FilterType::LowCut || bands[b].type == FilterType::HighCut);
+        int numStages = isCutFilter ? slopeToStages(bands[b].slope) : 1;
 
-            float numR = b0 + b1 * cosW + b2 * cos2W;
-            float numI = -(b1 * sinW + b2 * sin2W);
-            float denR = 1.0f + a1 * cosW + a2 * cos2W;
-            float denI = -(a1 * sinW + a2 * sin2W);
-
-            float denMag2 = denR * denR + denI * denI;
-            if (denMag2 < 1e-20f) denMag2 = 1e-20f;
-
-            float hR = (numR * denR + numI * denI) / denMag2;
-            float hI = (numI * denR - numR * denI) / denMag2;
-
-            response[k] *= std::complex<float>(hR, hI);
-        }
+        for (int s = 0; s < numStages; ++s)
+            computeBiquadResponse(bn, an, response, numBins, sampleRate);
     }
 }
 
@@ -296,15 +331,11 @@ void Equalizer::processLinearPhase(float* left, float* right, int numSamples)
 {
     if (numSamples <= 0) return;
 
-    // Compute frequency response once per block if parameters changed
     static std::array<std::complex<float>, FFT_SIZE> eqResponse{};
-    static bool responseDirty = true;
 
-    // Check if any band changed (simplified dirty check)
     eqResponse[0] = std::complex<float>(1.0f, 0.0f);
     computeEQFrequencyResponse(eqResponse.data(), FFT_HALF, (float)currentSampleRate);
 
-    // Mirror for negative frequencies
     for (int k = 1; k < FFT_HALF; ++k)
         eqResponse[FFT_SIZE - k] = std::conj(eqResponse[k]);
 
@@ -319,20 +350,13 @@ void Equalizer::processLinearPhase(float* left, float* right, int numSamples)
             lpWritePos = 0;
             lpReady = true;
 
-            // Apply window and FFT left channel
             std::array<std::complex<float>, FFT_SIZE> fftL{};
             for (int i = 0; i < FFT_SIZE; ++i)
                 fftL[i] = std::complex<float>(inputBufferL[i] * windowCoeffs[i], 0.0f);
             fftInPlace(fftL.data(), FFT_SIZE, false);
-
-            // Apply EQ response
             for (int i = 0; i < FFT_SIZE; ++i)
                 fftL[i] *= eqResponse[i];
-
-            // IFFT
             fftInPlace(fftL.data(), FFT_SIZE, true);
-
-            // Overlap-add for left
             for (int i = 0; i < FFT_HALF; ++i)
             {
                 float sample = fftL[i].real() * windowCoeffs[i] + overlapL[i];
@@ -340,20 +364,13 @@ void Equalizer::processLinearPhase(float* left, float* right, int numSamples)
                 inputBufferL[i] = sample;
             }
 
-            // Apply window and FFT right channel
             std::array<std::complex<float>, FFT_SIZE> fftR{};
             for (int i = 0; i < FFT_SIZE; ++i)
                 fftR[i] = std::complex<float>(inputBufferR[i] * windowCoeffs[i], 0.0f);
             fftInPlace(fftR.data(), FFT_SIZE, false);
-
-            // Apply EQ response
             for (int i = 0; i < FFT_SIZE; ++i)
                 fftR[i] *= eqResponse[i];
-
-            // IFFT
             fftInPlace(fftR.data(), FFT_SIZE, true);
-
-            // Overlap-add for right
             for (int i = 0; i < FFT_HALF; ++i)
             {
                 float sample = fftR[i].real() * windowCoeffs[i] + overlapR[i];
@@ -363,8 +380,6 @@ void Equalizer::processLinearPhase(float* left, float* right, int numSamples)
         }
     }
 
-    // Output processed samples from the overlap-add buffer
-    int readStart = lpReady ? 0 : 0;
     int avail = lpReady ? FFT_HALF : lpWritePos;
     int toRead = std::min(numSamples, avail);
 
@@ -374,31 +389,39 @@ void Equalizer::processLinearPhase(float* left, float* right, int numSamples)
         right[s] = inputBufferR[s];
     }
 
-    // If we need more samples than available, fill rest with zero-latency fallback
     if (numSamples > avail)
     {
         for (int i = 0; i < MAX_BANDS; ++i)
         {
             if (!bands[i].active || bands[i].bypassed) continue;
             float effectiveGain = bands[i].gain * gainScale;
-            filters[i].setParams(bands[i].freq, effectiveGain, bands[i].q, bands[i].type);
+            bool isCutFilter = (bands[i].type == FilterType::LowCut || bands[i].type == FilterType::HighCut);
+            int numStages = isCutFilter ? slopeToStages(bands[i].slope) : 1;
+
+            for (int s = 0; s < numStages; ++s)
+                filterStages[i][s].setParams(bands[i].freq, effectiveGain, bands[i].q, bands[i].type);
 
             switch (bands[i].channelMode)
             {
             case ChannelMode::Stereo:
-                filters[i].processStereo(left + avail, right + avail, numSamples - avail);
+                for (int s = 0; s < numStages; ++s)
+                    filterStages[i][s].processStereo(left + avail, right + avail, numSamples - avail);
                 break;
             case ChannelMode::Mid:
-                filters[i].processMidSide(left + avail, right + avail, numSamples - avail, true);
+                for (int s = 0; s < numStages; ++s)
+                    filterStages[i][s].processMidSide(left + avail, right + avail, numSamples - avail, true);
                 break;
             case ChannelMode::Side:
-                filters[i].processMidSide(left + avail, right + avail, numSamples - avail, false);
+                for (int s = 0; s < numStages; ++s)
+                    filterStages[i][s].processMidSide(left + avail, right + avail, numSamples - avail, false);
                 break;
             case ChannelMode::Left:
-                filters[i].processLeft(left + avail, numSamples - avail);
+                for (int s = 0; s < numStages; ++s)
+                    filterStages[i][s].processLeft(left + avail, numSamples - avail);
                 break;
             case ChannelMode::Right:
-                filters[i].processRight(right + avail, numSamples - avail);
+                for (int s = 0; s < numStages; ++s)
+                    filterStages[i][s].processRight(right + avail, numSamples - avail);
                 break;
             }
         }
@@ -413,10 +436,16 @@ float Equalizer::getMagnitudeAtFreq(float freq) const
         if (bands[i].active && !bands[i].bypassed)
         {
             float scaledGain = bands[i].gain * gainScale;
-            BiquadFilter tempFilter;
-            const_cast<BiquadFilter&>(tempFilter).prepare(currentSampleRate);
-            const_cast<BiquadFilter&>(tempFilter).setParams(bands[i].freq, scaledGain, bands[i].q, bands[i].type);
-            mag *= tempFilter.getMagnitude(freq);
+            bool isCutFilter = (bands[i].type == FilterType::LowCut || bands[i].type == FilterType::HighCut);
+            int numStages = isCutFilter ? slopeToStages(bands[i].slope) : 1;
+
+            for (int s = 0; s < numStages; ++s)
+            {
+                BiquadFilter tempFilter;
+                const_cast<BiquadFilter&>(tempFilter).prepare(currentSampleRate);
+                const_cast<BiquadFilter&>(tempFilter).setParams(bands[i].freq, scaledGain, bands[i].q, bands[i].type);
+                mag *= tempFilter.getMagnitude(freq);
+            }
         }
     }
     return mag;

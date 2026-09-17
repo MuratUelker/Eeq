@@ -9,6 +9,8 @@ static const juce::StringArray channelModeNames = {"Stereo", "Left", "Right", "M
 static const juce::StringArray procModeNames = {"Zero Latency", "Natural Phase", "Linear Phase"};
 static const juce::StringArray analyzerNames = {"Pre", "Post", "Off"};
 
+const juce::StringArray EeqEditor::slopeNames = {"6 dB", "12 dB", "18 dB", "24 dB", "30 dB", "36 dB", "42 dB", "48 dB"};
+
 static const juce::StringArray factoryPresetNames = {
     "Init", "Vocal Presence", "De-Esser", "Guitar Bright", "Bass Tight",
     "Drum Smash", "Master Bright", "Master Warm", "Low Pass 8k", "High Pass 80"
@@ -206,6 +208,35 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     addAndMakeVisible(dynThreshLabel);
     dynThreshLabel.setVisible(false);
 
+    // Slope combo box
+    for (const auto& name : slopeNames)
+        slopeBox.addItem(name, slopeBox.getNumItems() + 1);
+    slopeBox.setSelectedId(4);
+    slopeBox.setColour(juce::ComboBox::backgroundColourId, juce::Colour(0xFF1a1a2e));
+    slopeBox.setColour(juce::ComboBox::textColourId, juce::Colour(0xFFe0e0ff));
+    addAndMakeVisible(slopeBox);
+    slopeBox.setVisible(false);
+    slopeBox.addListener(this);
+
+    slopeLabel.setJustificationType(juce::Justification::centred);
+    slopeLabel.setFont(makeFont(9.0f));
+    slopeLabel.setColour(juce::Label::textColourId, juce::Colour(0xFFa0a0c0));
+    addAndMakeVisible(slopeLabel);
+    slopeLabel.setVisible(false);
+
+    // SC Trigger button
+    scTriggerBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFf72585));
+    scTriggerBtn.setClickingTogglesState(true);
+    addAndMakeVisible(scTriggerBtn);
+    scTriggerBtn.setVisible(false);
+    scTriggerBtn.addListener(this);
+
+    scLabel.setJustificationType(juce::Justification::centred);
+    scLabel.setFont(makeFont(9.0f));
+    scLabel.setColour(juce::Label::textColourId, juce::Colour(0xFFf72585));
+    addAndMakeVisible(scLabel);
+    scLabel.setVisible(false);
+
     // === Bottom bar ===
     phaseBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFe94560));
     phaseBtn.setClickingTogglesState(true);
@@ -277,6 +308,8 @@ EeqEditor::~EeqEditor()
     bandBypassBtn.removeListener(this);
     dynBtn.removeListener(this);
     dynAutoBtn.removeListener(this);
+    slopeBox.removeListener(this);
+    scTriggerBtn.removeListener(this);
     procModeBox.removeListener(this);
     freezeBtn.removeListener(this);
     abBtn.removeListener(this);
@@ -407,6 +440,8 @@ void EeqEditor::updateControlsFromBand(int idx)
     float dynR = apvts.getRawParameterValue("b" + id + "_dynRange")->load();
     float dynT = apvts.getRawParameterValue("b" + id + "_dynThresh")->load();
     bool dynA = apvts.getRawParameterValue("b" + id + "_dynAuto")->load() > 0.5f;
+    int slopeIdx = (int)apvts.getRawParameterValue("b" + id + "_slope")->load();
+    bool sc = apvts.getRawParameterValue("b" + id + "_sc")->load() > 0.5f;
 
     freqSlider.setValue(freqNorm, juce::dontSendNotification);
     gainSlider.setValue(gainNorm, juce::dontSendNotification);
@@ -419,6 +454,8 @@ void EeqEditor::updateControlsFromBand(int idx)
     dynRangeSlider.setValue(dynR, juce::dontSendNotification);
     dynThreshSlider.setValue(dynT, juce::dontSendNotification);
     dynAutoBtn.setToggleState(dynA, juce::dontSendNotification);
+    slopeBox.setSelectedId(slopeIdx + 1, juce::dontSendNotification);
+    scTriggerBtn.setToggleState(sc, juce::dontSendNotification);
 
     bool dynVisible = dyn;
     dynRangeSlider.setVisible(dynVisible);
@@ -426,6 +463,12 @@ void EeqEditor::updateControlsFromBand(int idx)
     dynAutoBtn.setVisible(dynVisible);
     dynRangeLabel.setVisible(dynVisible);
     dynThreshLabel.setVisible(dynVisible);
+
+    bool isCutType = (typeIdx == 3 || typeIdx == 4);
+    slopeBox.setVisible(isCutType);
+    slopeLabel.setVisible(isCutType);
+    scTriggerBtn.setVisible(dyn);
+    scLabel.setVisible(dyn);
 }
 
 void EeqEditor::updateBandFromControls(int idx)
@@ -458,6 +501,10 @@ void EeqEditor::updateBandFromControls(int idx)
         apvts.getParameter("b" + id + "_dynThresh")->setValueNotifyingHost(
             apvts.getParameter("b" + id + "_dynThresh")->convertTo0to1((float)dynThreshSlider.getValue()));
     }
+    apvts.getParameter("b" + id + "_slope")->setValueNotifyingHost(
+        apvts.getParameter("b" + id + "_slope")->convertTo0to1(slopeBox.getSelectedId() - 1));
+    apvts.getParameter("b" + id + "_sc")->setValueNotifyingHost(
+        scTriggerBtn.getToggleState() ? 1.0f : 0.0f);
 }
 
 void EeqEditor::updateBandFromMouse(int band, float mx, float my)
@@ -522,7 +569,39 @@ void EeqEditor::mouseDown(const juce::MouseEvent& e)
     float mx = e.position.x;
     float my = e.position.y;
 
-    if (!display.contains(mx, my)) return;
+    if (!display.contains(mx, my))
+    {
+        auto piano = getPianoBounds();
+        if (piano.contains(mx, my))
+        {
+            float freq = xToFreq(mx, piano);
+            if (e.mods.isShiftDown())
+            {
+                for (int i = 0; i < NUM_BANDS; ++i)
+                {
+                    if (!bandVisuals[i].active)
+                    {
+                        processor.pushUndoState();
+                        auto id = juce::String(i + 1);
+                        processor.getAPVTS().getParameter("b" + id + "_freq")->setValueNotifyingHost(
+                            processor.getAPVTS().getParameter("b" + id + "_freq")->convertTo0to1(freq));
+                        processor.getAPVTS().getParameter("b" + id + "_gain")->setValueNotifyingHost(
+                            processor.getAPVTS().getParameter("b" + id + "_gain")->convertTo0to1(0.0f));
+                        processor.getAPVTS().getParameter("b" + id + "_type")->setValueNotifyingHost(
+                            processor.getAPVTS().getParameter("b" + id + "_type")->convertTo0to1(0));
+                        processor.getAPVTS().getParameter("b" + id + "_active")->setValueNotifyingHost(1.0f);
+                        selectBand(i);
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                addBandAt(freq, 0.0f);
+            }
+        }
+        return;
+    }
 
     int hit = findBandAt(mx, my);
 
@@ -815,12 +894,19 @@ void EeqEditor::comboBoxChanged(juce::ComboBox* box)
     {
         processor.setProcessingMode((ProcessingMode)(procModeBox.getSelectedId() - 1));
     }
-    else if (box == &typeBox || box == &channelModeBox)
+    else if (box == &typeBox || box == &channelModeBox || box == &slopeBox)
     {
         if (selectedBand >= 0)
         {
             processor.pushUndoState();
             updateBandFromControls(selectedBand);
+            if (box == &typeBox)
+            {
+                int typeIdx = typeBox.getSelectedId() - 1;
+                bool isCutType = (typeIdx == 3 || typeIdx == 4);
+                slopeBox.setVisible(isCutType);
+                slopeLabel.setVisible(isCutType);
+            }
         }
     }
 }
@@ -884,6 +970,14 @@ void EeqEditor::buttonClicked(juce::Button* btn)
         dynAutoBtn.setVisible(vis);
         dynRangeLabel.setVisible(vis);
         dynThreshLabel.setVisible(vis);
+        scTriggerBtn.setVisible(vis);
+        scLabel.setVisible(vis);
+    }
+    else if (btn == &scTriggerBtn && selectedBand >= 0)
+    {
+        auto id = juce::String(selectedBand + 1);
+        processor.getAPVTS().getParameter("b" + id + "_sc")->setValueNotifyingHost(
+            scTriggerBtn.getToggleState() ? 1.0f : 0.0f);
     }
     else if (btn == &dynAutoBtn && selectedBand >= 0)
     {
@@ -1018,6 +1112,22 @@ void EeqEditor::drawSpectrum(juce::Graphics& g, juce::Rectangle<float> d)
     filledPath.lineTo(d.getX(), d.getBottom());
     filledPath.closeSubPath();
 
+    for (int px = 0; px < (int)d.getWidth(); px += 3)
+    {
+        float freq = xToFreq((float)px, d);
+        float norm = (std::log10(std::max(freq, 20.0f)) - std::log10(20.0f))
+                   / (std::log10(22000.0f) - std::log10(20.0f));
+        norm = juce::jlimit(0.0f, 1.0f, norm);
+
+        float r, gr, b;
+        if (norm < 0.33f) { r = norm * 3.0f; gr = 0.6f + norm; b = 0.2f; }
+        else if (norm < 0.66f) { r = 1.0f; gr = 1.0f - (norm - 0.33f) * 1.5f; b = 0.2f; }
+        else { r = 1.0f - (norm - 0.66f); gr = 0.2f; b = 0.3f + norm; }
+
+        g.setColour(juce::Colour::fromFloatRGBA(r, gr, b, 0.06f));
+        g.fillRect(d.getX() + (float)px, d.getY(), 3.0f, d.getHeight());
+    }
+
     g.setColour(juce::Colour(0xFF00ff88).withAlpha(0.08f));
     g.fillPath(filledPath);
     g.setColour(juce::Colour(0xFF00ff88).withAlpha(0.5f));
@@ -1125,6 +1235,11 @@ void EeqEditor::drawBandNodes(juce::Graphics& g, juce::Rectangle<float> d)
                 + channelModeNames[juce::jmin(chIdx, 4)] + "\n"
                 + juce::String(freq, 0) + " Hz\n"
                 + juce::String(gain, 1) + " dB\nQ: " + juce::String(q, 2);
+            if (typeIdx == 3 || typeIdx == 4)
+            {
+                int slopeI = (int)apvts.getRawParameterValue("b" + id + "_slope")->load();
+                info += "\n" + slopeNames[juce::jmin(slopeI, 7)];
+            }
             g.setFont(makeFont(9.0f));
             g.setColour(col.withAlpha(0.7f));
             g.drawText(info, x - 45, y - radius - 58, 90, 54, juce::Justification::centred);
@@ -1169,6 +1284,15 @@ void EeqEditor::drawBandNodes(juce::Graphics& g, juce::Rectangle<float> d)
             g.setColour(juce::Colour(0xFF2a9d8f));
             g.setFont(makeFont(7.0f));
             g.drawText("D", x + radius + 2, y - 4, 8, 8, juce::Justification::centred);
+        }
+
+        // SC trigger indicator
+        bool sc = apvts.getRawParameterValue("b" + id + "_sc")->load() > 0.5f;
+        if (sc)
+        {
+            g.setColour(juce::Colour(0xFFf72585));
+            g.setFont(makeFont(7.0f));
+            g.drawText("SC", x + radius + 2, y + 4, 12, 8, juce::Justification::centred);
         }
     }
 }
@@ -1338,6 +1462,11 @@ void EeqEditor::resized()
     dynThreshLabel.setBounds(cx + 88, cy, 38, 10);
     dynThreshSlider.setBounds(cx + 88, cy + 10, 80, 16);
     dynAutoBtn.setBounds(cx + 176, cy + 8, 36, 18);
+
+    slopeLabel.setBounds(cx + 218, cy, 36, 10);
+    slopeBox.setBounds(cx + 218, cy + 4, 52, 20);
+    scLabel.setBounds(cx + 276, cy, 20, 10);
+    scTriggerBtn.setBounds(cx + 276, cy + 4, 24, 20);
 
     // Bottom bar
     int bx = bottomBar.getX() + 8;
