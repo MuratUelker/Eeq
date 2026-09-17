@@ -289,6 +289,14 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     deleteBandBtn.setVisible(false);
     deleteBandBtn.addListener(this);
 
+    // Invert Gain
+    invertGainBtn.setButtonText("Inv");
+    invertGainBtn.setColour(juce::TextButton::buttonColourId, juce::Colour(0xFF16213e));
+    invertGainBtn.setColour(juce::TextButton::textColourOffId, juce::Colour(0xFFe94560));
+    addAndMakeVisible(invertGainBtn);
+    invertGainBtn.setVisible(false);
+    invertGainBtn.addListener(this);
+
     // Dynamic EQ row
     dynRangeSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
     dynRangeSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 52, 14);
@@ -566,6 +574,7 @@ void EeqEditor::selectBand(int idx)
     nextBandBtn.setVisible(showPanel);
     bandNumberLabel.setVisible(showPanel);
     deleteBandBtn.setVisible(showPanel);
+    invertGainBtn.setVisible(showPanel);
     gainQBtn.setVisible(showPanel);
     slopeBox.setVisible(false);
     dynRangeSlider.setVisible(false);
@@ -1168,6 +1177,14 @@ void EeqEditor::buttonClicked(juce::Button* btn)
         bandVisuals[selectedBand].active = false;
         selectBand(-1);
     }
+    else if (btn == &invertGainBtn && selectedBand >= 0)
+    {
+        processor.pushUndoState();
+        auto id = juce::String(selectedBand + 1);
+        auto* gainParam = processor.getAPVTS().getParameter("b" + id + "_gain");
+        float currentGain = gainParam->getValue();
+        gainParam->setValueNotifyingHost(gainParam->convertTo0to1(-currentGain));
+    }
     else if (btn == &dynAutoBtn && selectedBand >= 0)
     {
         auto id = juce::String(selectedBand + 1);
@@ -1732,6 +1749,8 @@ void EeqEditor::resized()
         nextBandBtn.setBounds(px + 38, py + 2, 18, 16);
         px += 62;
         deleteBandBtn.setBounds(px, py, smallBtn, smallBtn);
+        px += 26;
+        invertGainBtn.setBounds(px, py, smallBtn, smallBtn);
 
         // Row 2 (dynamic EQ): Range | Thresh | Auto | SC | Phase
         if (dynRangeSlider.isVisible())
@@ -1762,6 +1781,7 @@ void EeqEditor::resized()
     phaseInvertBtn.toFront(true);
     midiLearnBtn.toFront(true);
     pianoScaleBtn.toFront(true);
+    invertGainBtn.toFront(true);
 }
 
 // ===================== Presets =====================

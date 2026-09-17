@@ -97,6 +97,7 @@ private:
     juce::ToggleButton prevBandBtn{"<"};
     juce::ToggleButton nextBandBtn{">"};
     juce::TextButton deleteBandBtn{"X"};
+    juce::TextButton invertGainBtn{"Inv"};
     juce::Label bandNumberLabel{"", "1"};
 
     // Dynamic EQ (row 2 of floating panel)
