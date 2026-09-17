@@ -79,6 +79,11 @@ juce::AudioProcessorValueTreeState::ParameterLayout EeqProcessor::createLayout()
     layout.add(std::make_unique<juce::AudioParameterChoice>(
         juce::ParameterID{"displayRange", 1}, "Display Range",
         juce::StringArray{"3 dB", "6 dB", "12 dB", "30 dB"}, 3));
+    layout.add(std::make_unique<juce::AudioParameterBool>(
+        juce::ParameterID{"autoGainAdvanced", 1}, "Auto Gain Advanced", false));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID{"autoGainChannelWeight", 1}, "Auto Gain Channel Weight",
+        juce::NormalisableRange<float>(0.0f, 1.0f, 0.01f), 0.5f));
 
     return layout;
 }
@@ -289,6 +294,35 @@ void EeqProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuff
                         eqGain += std::abs(equalizer.getBand(i).gain);
                 float compensation = -eqGain / (float)MAX_BANDS * 0.3f;
                 float gain = std::pow(10.0f, compensation / 20.0f);
+                
+                // Advanced Auto Gain: channel weighting
+                if (autoGainAdvanced)
+                {
+                    // Estimate dynamic gain from current signal
+                    float rmsL = 0.0f, rmsR = 0.0f;
+                    for (int s = 0; s < numSamples; ++s)
+                    {
+                        float l = buffer.getWritePointer(0)[s];
+                        float r = buffer.getNumChannels() > 1 ? buffer.getWritePointer(1)[s] : l;
+                        rmsL += l * l;
+                        rmsR += r * r;
+                    }
+                    rmsL = std::sqrt(rmsL / (float)numSamples);
+                    rmsR = std::sqrt(rmsR / (float)numSamples);
+                    
+                    float midRMS = std::sqrt((rmsL * rmsL + rmsR * rmsR) * 0.5f);
+                    float sideRMS = std::sqrt((rmsL * rmsL + rmsR * rmsR) * 0.5f);
+                    
+                    // Apply channel weighting
+                    float weight = autoGainChannelWeight;
+                    float targetRMS = midRMS * weight + sideRMS * (1.0f - weight);
+                    if (targetRMS > 1e-10f)
+                    {
+                        float currentRMS = std::sqrt((rmsL * rmsL + rmsR * rmsR) * 0.5f);
+                        gain *= targetRMS / currentRMS;
+                    }
+                }
+                
                 for (int ch = 0; ch < numChannels; ++ch)
                 {
                     auto* chData = buffer.getWritePointer(ch);

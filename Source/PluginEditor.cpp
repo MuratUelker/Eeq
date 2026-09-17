@@ -395,6 +395,26 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     addAndMakeVisible(spectrumGrabLabel);
     spectrumGrabLabel.setVisible(false);
 
+    // Advanced Auto Gain
+    autoGainAdvBtn.setButtonText("Adv");
+    autoGainAdvBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFa0a0c0));
+    addAndMakeVisible(autoGainAdvBtn);
+    autoGainAdvBtn.addListener(this);
+
+    autoGainWeightSlider.setSliderStyle(juce::Slider::LinearHorizontal);
+    autoGainWeightSlider.setRange(0.0, 1.0, 0.01);
+    autoGainWeightSlider.setValue(0.5, juce::dontSendNotification);
+    autoGainWeightSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFFe94560));
+    autoGainWeightSlider.setColour(juce::Slider::trackColourId, juce::Colour(0xFF2a2a4a));
+    autoGainWeightSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFe0e0ff));
+    autoGainWeightSlider.setDoubleClickReturnValue(true, 0.5);
+    addAndMakeVisible(autoGainWeightSlider);
+
+    autoGainWeightLabel.setJustificationType(juce::Justification::centred);
+    autoGainWeightLabel.setFont(makeFont(9.0f));
+    autoGainWeightLabel.setColour(juce::Label::textColourId, juce::Colour(0xFFa0a0c0));
+    addAndMakeVisible(autoGainWeightLabel);
+
     // EQ Match
     eqMatchBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFa0a0c0));
     eqMatchBtn.setClickingTogglesState(true);
@@ -1123,9 +1143,13 @@ bool EeqEditor::keyPressed(const juce::KeyPress& key)
 
 // ===================== Listeners =====================
 
-void EeqEditor::sliderValueChanged(juce::Slider*)
+void EeqEditor::sliderValueChanged(juce::Slider* slider)
 {
-    if (selectedBand >= 0)
+    if (slider == &autoGainWeightSlider)
+    {
+        processor.setAutoGainChannelWeight((float)autoGainWeightSlider.getValue());
+    }
+    else if (selectedBand >= 0)
     {
         processor.pushUndoState();
         updateBandFromControls(selectedBand);
@@ -1243,6 +1267,8 @@ void EeqEditor::buttonClicked(juce::Button* btn)
         processor.setPhaseInverted(phaseBtn.getToggleState());
     else if (btn == &autoGainBtn)
         processor.setAutoGainEnabled(autoGainBtn.getToggleState());
+    else if (btn == &autoGainAdvBtn)
+        processor.setAutoGainAdvanced(autoGainAdvBtn.getToggleState());
 
     else if (btn == &bandBypassBtn && selectedBand >= 0)
     {
@@ -1810,6 +1836,13 @@ void EeqEditor::resized()
     bx += 110;
     gainScaleLabel.setBounds(bx, by - 2, 34, 10);
     gainScaleSlider.setBounds(bx, by + 10, 100, 14);
+    bx += 110;
+    autoGainWeightLabel.setBounds(bx, by - 2, 34, 10);
+    autoGainWeightSlider.setBounds(bx, by + 10, 100, 14);
+    bx += 110;
+    autoGainAdvBtn.setBounds(bx, by, 26, 22);
+    bx += 30;
+    phaseBtn.setBounds(bx, by, 50, 22);
 
     // === Floating band controls layout ===
     auto panel = getBandControlsBounds();
@@ -1878,6 +1911,9 @@ void EeqEditor::resized()
     pianoScaleBtn.toFront(true);
     invertGainBtn.toFront(true);
     spectrumGrabLabel.toFront(true);
+    autoGainAdvBtn.toFront(true);
+    autoGainWeightSlider.toFront(true);
+    autoGainWeightLabel.toFront(true);
 }
 
 // ===================== Presets =====================

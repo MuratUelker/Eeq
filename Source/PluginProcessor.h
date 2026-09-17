@@ -77,6 +77,12 @@ public:
     bool isAutoGainEnabled() const { return autoGainEnabled; }
     void setAutoGainEnabled(bool enabled) { autoGainEnabled = enabled; }
 
+    // Advanced Auto Gain
+    bool isAutoGainAdvanced() const { return autoGainAdvanced; }
+    void setAutoGainAdvanced(bool enabled) { autoGainAdvanced = enabled; }
+    float getAutoGainChannelWeight() const { return autoGainChannelWeight; }
+    void setAutoGainChannelWeight(float weight) { autoGainChannelWeight = juce::jlimit(0.0f, 1.0f, weight); }
+
     // Output Pan
     float getOutputPan() const { return outputPan; }
     void setOutputPan(float pan) { outputPan = pan; }
@@ -155,6 +161,8 @@ private:
     NaturalPhaseResolution npResolution = NaturalPhaseResolution::High;
     bool phaseInverted = false;
     bool autoGainEnabled = true;
+    bool autoGainAdvanced = false;
+    float autoGainChannelWeight = 0.5f; // 0.0 = side only, 0.5 = equal, 1.0 = mid only
     float outputPan = 0.0f;
     float gainScale = 1.0f;
     float displayRange = 30.0f;

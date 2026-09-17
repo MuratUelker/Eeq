@@ -113,10 +113,13 @@ private:
     // === Bottom bar controls (global) ===
     juce::ToggleButton phaseBtn{"Phase"};
     juce::ToggleButton autoGainBtn{"AG"};
+    juce::ToggleButton autoGainAdvBtn{"Adv"};
     juce::Slider outputPanSlider;
     juce::Label panLabel{"", "Pan"};
     juce::Slider gainScaleSlider;
     juce::Label gainScaleLabel{"", "Scale"};
+    juce::Slider autoGainWeightSlider;
+    juce::Label autoGainWeightLabel{"", "Weight"};
     juce::Label spectrumGrabLabel{"", "Grab: —"};
 
     // Output meter
