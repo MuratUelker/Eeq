@@ -114,11 +114,45 @@ int EeqProcessor::getLatencySamples() const
     return 0;
 }
 
-void EeqProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer&)
+void EeqProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
     juce::ScopedNoDenormals noDenormals;
     auto numSamples = buffer.getNumSamples();
     auto numChannels = buffer.getNumChannels();
+
+    // Handle MIDI Learn
+    if (midiLearnActive)
+    {
+        for (const auto metadata : midiMessages)
+        {
+            const juce::MidiMessage& msg = metadata.getMessage();
+            if (msg.isController())
+            {
+                int cc = msg.getControllerNumber();
+                int channel = msg.getChannel();
+                if (selectedBandForMidiLearn >= 0 && selectedParamForMidiLearn.isNotEmpty())
+                {
+                    addMidiMapping(selectedBandForMidiLearn, selectedParamForMidiLearn, cc, channel);
+                    midiLearnActive = false;
+                    // Notify editor to update UI
+                }
+            }
+        }
+    }
+
+    // Handle existing MIDI mappings
+    for (const auto& mapping : midiMappings)
+    {
+        for (const auto metadata : midiMessages)
+        {
+            const juce::MidiMessage& msg = metadata.getMessage();
+            if (msg.isController() && msg.getControllerNumber() == mapping.cc && msg.getChannel() == mapping.channel)
+            {
+                float value = msg.getControllerValue() / 127.0f;
+                applyMidiMapping(mapping, value);
+            }
+        }
+    }
 
     // Update EQ bands from APVTS
     for (int i = 0; i < MAX_BANDS; ++i)
@@ -567,6 +601,48 @@ void EeqProcessor::loadUserPreset(const juce::String& name)
         displayRange = state.getProperty("displayRange", 30.0f);
         equalizer.setProcessingMode(currentMode);
         equalizer.setLinearPhaseResolution(lpResolution);
+    }
+}
+
+void EeqProcessor::setMidiLearnActive(bool active)
+{
+    midiLearnActive = active;
+    if (!active)
+    {
+        // Could add logic here to save mappings
+    }
+}
+
+void EeqProcessor::addMidiMapping(int band, const juce::String& param, int cc, int channel)
+{
+    MidiMapping mapping;
+    mapping.band = band;
+    mapping.param = param;
+    mapping.cc = cc;
+    mapping.channel = channel;
+    midiMappings.push_back(mapping);
+}
+
+void EeqProcessor::clearMidiMappings()
+{
+    midiMappings.clear();
+}
+
+void EeqProcessor::setMidiLearnTarget(int band, const juce::String& param)
+{
+    selectedBandForMidiLearn = band;
+    selectedParamForMidiLearn = param;
+}
+
+void EeqProcessor::applyMidiMapping(const MidiMapping& mapping, float value)
+{
+    if (mapping.band < 0 || mapping.band >= MAX_BANDS) return;
+    
+    auto id = juce::String(mapping.band + 1);
+    auto* param = apvts.getParameter("b" + id + "_" + mapping.param);
+    if (param != nullptr)
+    {
+        param->setValueNotifyingHost(param->convertTo0to1(value));
     }
 }
 

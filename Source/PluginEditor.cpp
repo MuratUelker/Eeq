@@ -330,6 +330,14 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     eqMatchApplyBtn.setVisible(false);
     eqMatchApplyBtn.addListener(this);
 
+    // MIDI Learn
+    midiLearnBtn.setButtonText("MIDI");
+    midiLearnBtn.setColour(juce::TextButton::buttonColourId, juce::Colour(0xFF16213e));
+    midiLearnBtn.setColour(juce::TextButton::textColourOffId, juce::Colour(0xFFe94560));
+    addAndMakeVisible(midiLearnBtn);
+    midiLearnBtn.setVisible(false);
+    midiLearnBtn.addListener(this);
+
     startTimerHz(30);
 }
 
@@ -1113,6 +1121,13 @@ void EeqEditor::buttonClicked(juce::Button* btn)
         processor.getSpectrumAnalyzer().setFreeze(false);
         eqMatchCaptureBtn.setButtonText("Capture");
     }
+    else if (btn == &midiLearnBtn)
+    {
+        midiLearnActive = !midiLearnActive;
+        midiLearnBtn.setToggleState(midiLearnActive, juce::dontSendNotification);
+        midiLearnBtn.setButtonText(midiLearnActive ? "LEARN" : "MIDI");
+        midiLearnBtn.setColour(juce::TextButton::buttonColourId, midiLearnActive ? juce::Colour(0xFFe94560) : juce::Colour(0xFF16213e));
+    }
 }
 
 // ===================== Painting =====================
@@ -1561,6 +1576,8 @@ void EeqEditor::resized()
     eqMatchCaptureBtn.setBounds(x, topBar.getY() + 6, 58, 24);
     x += 64;
     eqMatchApplyBtn.setBounds(x, topBar.getY() + 6, 42, 24);
+    x += 48;
+    midiLearnBtn.setBounds(x, topBar.getY() + 6, 36, 24);
 
     undoBtn.setBounds(topBar.getRight() - 120, topBar.getY() + 6, 36, 24);
     redoBtn.setBounds(topBar.getRight() - 80, topBar.getY() + 6, 36, 24);
@@ -1638,6 +1655,7 @@ void EeqEditor::resized()
     channelModeBox.toFront(true);
     slopeBox.toFront(true);
     phaseInvertBtn.toFront(true);
+    midiLearnBtn.toFront(true);
 }
 
 // ===================== Presets =====================

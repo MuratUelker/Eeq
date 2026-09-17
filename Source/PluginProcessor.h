@@ -116,6 +116,16 @@ public:
     float getOutputLevelL() const { return outputLevelL; }
     float getOutputLevelR() const { return outputLevelR; }
 
+    // MIDI Learn
+    struct MidiMapping { int band; juce::String param; int cc; int channel; };
+    void setMidiLearnActive(bool active);
+    bool isMidiLearnActive() const { return midiLearnActive; }
+    void setMidiLearnTarget(int band, const juce::String& param);
+    void applyMidiMapping(const MidiMapping& mapping, float value);
+    void addMidiMapping(int band, const juce::String& param, int cc, int channel);
+    void clearMidiMappings();
+    const std::vector<MidiMapping>& getMidiMappings() const { return midiMappings; }
+
     // User presets
     void saveUserPreset(const juce::String& name);
     void deleteUserPreset(const juce::String& name);
@@ -141,6 +151,12 @@ private:
     float outputLevelL = -60.0f;
     float outputLevelR = -60.0f;
     bool eqMatchActive = false;
+
+    // MIDI Learn
+    bool midiLearnActive = false;
+    int selectedBandForMidiLearn = -1;
+    juce::String selectedParamForMidiLearn;
+    std::vector<MidiMapping> midiMappings;
 
     // Undo/Redo
     static constexpr int MAX_UNDO = 50;

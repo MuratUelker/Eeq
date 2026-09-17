@@ -115,6 +115,12 @@ private:
     juce::TextButton eqMatchApplyBtn{"Apply"};
     bool eqMatchCapturing = false;
 
+    // MIDI Learn
+    juce::ToggleButton midiLearnBtn{"MIDI"};
+    bool midiLearnActive = false;
+    struct MidiMapping { int band; juce::String param; int cc; int channel; };
+    std::vector<MidiMapping> midiMappings;
+
     // Colours
     juce::Colour bandColours[24] = {
         juce::Colour(0xFFe94560), juce::Colour(0xFF00b4d8), juce::Colour(0xFF533483),
