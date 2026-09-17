@@ -116,6 +116,13 @@ public:
     float getOutputLevelL() const { return outputLevelL; }
     float getOutputLevelR() const { return outputLevelR; }
 
+    // User presets
+    void saveUserPreset(const juce::String& name);
+    void deleteUserPreset(const juce::String& name);
+    juce::StringArray getUserPresetNames() const;
+    void loadUserPreset(const juce::String& name);
+    juce::File getUserPresetFolder() const;
+
 private:
     Equalizer equalizer;
     SpectrumAnalyzer spectrum;
@@ -149,14 +156,6 @@ private:
     void applyState(const EQSnapshot& state);
     void saveStateToFile();
     void loadStateFromFile();
-
-    // User presets
-public:
-    void saveUserPreset(const juce::String& name);
-    void deleteUserPreset(const juce::String& name);
-    juce::StringArray getUserPresetNames() const;
-    void loadUserPreset(const juce::String& name);
-    juce::File getUserPresetFolder() const;
 
 private:
 

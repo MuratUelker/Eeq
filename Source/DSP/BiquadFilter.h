@@ -117,4 +117,5 @@ struct BandState
     ChannelMode channelMode = ChannelMode::Stereo;
     DynamicState dynamic;
     bool scTrigger = false;
+    bool phaseInverted = false;
 };

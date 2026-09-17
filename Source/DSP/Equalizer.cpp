@@ -145,6 +145,16 @@ void Equalizer::process(float* left, float* right, int numSamples)
                 filterStages[i][s].processRight(right, numSamples);
             break;
         }
+
+        // Apply phase inversion if enabled
+        if (bands[i].phaseInverted)
+        {
+            for (int s = 0; s < numSamples; ++s)
+            {
+                left[s] = -left[s];
+                right[s] = -right[s];
+            }
+        }
     }
 }
 

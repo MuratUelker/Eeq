@@ -49,6 +49,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout EeqProcessor::createLayout()
             juce::StringArray{"6 dB", "12 dB", "18 dB", "24 dB", "30 dB", "36 dB", "42 dB", "48 dB", "96 dB", "Brickwall"}, 3));
         layout.add(std::make_unique<juce::AudioParameterBool>(
             juce::ParameterID{"b" + id + "_sc", 1}, "Band " + id + " SC Trigger", false));
+        layout.add(std::make_unique<juce::AudioParameterBool>(
+            juce::ParameterID{"b" + id + "_phase", 1}, "Band " + id + " Phase Invert", false));
     }
 
     for (int i = 0; i < MAX_BANDS; ++i)
@@ -133,6 +135,7 @@ void EeqProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuff
         state.dynamic.threshold = apvts.getRawParameterValue("b" + id + "_dynThresh")->load();
         state.dynamic.autoThreshold = apvts.getRawParameterValue("b" + id + "_dynAuto")->load() > 0.5f;
         state.scTrigger = apvts.getRawParameterValue("b" + id + "_sc")->load() > 0.5f;
+        state.phaseInverted = apvts.getRawParameterValue("b" + id + "_phase")->load() > 0.5f;
         int slopeIdx = (int)apvts.getRawParameterValue("b" + id + "_slope")->load();
         state.slope = (FilterSlope)juce::jlimit(0, 7, slopeIdx);
 

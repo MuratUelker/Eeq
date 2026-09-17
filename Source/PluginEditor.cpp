@@ -251,6 +251,13 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     scTriggerBtn.setVisible(false);
     scTriggerBtn.addListener(this);
 
+    phaseInvertBtn.setButtonText("Ø");
+    phaseInvertBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFe94560));
+    phaseInvertBtn.setClickingTogglesState(true);
+    addAndMakeVisible(phaseInvertBtn);
+    phaseInvertBtn.setVisible(false);
+    phaseInvertBtn.addListener(this);
+
     // === Bottom bar (global) ===
     phaseBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFe94560));
     phaseBtn.setClickingTogglesState(true);
@@ -528,6 +535,7 @@ void EeqEditor::updateControlsFromBand(int idx)
     dynThreshSlider.setValue(dynT, juce::dontSendNotification);
     dynAutoBtn.setToggleState(dynA, juce::dontSendNotification);
     scTriggerBtn.setToggleState(sc, juce::dontSendNotification);
+    phaseInvertBtn.setToggleState(apvts.getRawParameterValue("b" + id + "_phase")->load() > 0.5f, juce::dontSendNotification);
     bandNumberLabel.setText(juce::String(idx + 1), juce::dontSendNotification);
 
     bool isCutType = (typeIdx == 3 || typeIdx == 4);
@@ -537,6 +545,7 @@ void EeqEditor::updateControlsFromBand(int idx)
     dynThreshSlider.setVisible(dyn);
     dynAutoBtn.setVisible(dyn);
     scTriggerBtn.setVisible(dyn);
+    phaseInvertBtn.setVisible(true);
 }
 
 void EeqEditor::updateBandFromControls(int idx)
@@ -1051,6 +1060,12 @@ void EeqEditor::buttonClicked(juce::Button* btn)
         auto id = juce::String(selectedBand + 1);
         processor.getAPVTS().getParameter("b" + id + "_sc")->setValueNotifyingHost(
             scTriggerBtn.getToggleState() ? 1.0f : 0.0f);
+    }
+    else if (btn == &phaseInvertBtn && selectedBand >= 0)
+    {
+        auto id = juce::String(selectedBand + 1);
+        processor.getAPVTS().getParameter("b" + id + "_phase")->setValueNotifyingHost(
+            phaseInvertBtn.getToggleState() ? 1.0f : 0.0f);
     }
     else if (btn == &eqMatchBtn)
     {
@@ -1569,7 +1584,7 @@ void EeqEditor::resized()
         px += 62;
         deleteBandBtn.setBounds(px, py, smallBtn, smallBtn);
 
-        // Row 2 (dynamic EQ): Range | Thresh | Auto | SC
+        // Row 2 (dynamic EQ): Range | Thresh | Auto | SC | Phase
         if (dynRangeSlider.isVisible())
         {
             float dy = py + knobH - 2;
@@ -1577,6 +1592,7 @@ void EeqEditor::resized()
             dynThreshSlider.setBounds(panel.getX() + 18 + knobW + 4, dy, knobW, knobH - 8);
             dynAutoBtn.setBounds(panel.getX() + 18 + (knobW + 4) * 2, dy + 8, 36, 18);
             scTriggerBtn.setBounds(panel.getX() + 18 + (knobW + 4) * 2 + 40, dy + 8, 28, 18);
+            phaseInvertBtn.setBounds(panel.getX() + 18 + (knobW + 4) * 2 + 72, dy + 8, 24, 18);
         }
     }
 
@@ -1592,6 +1608,7 @@ void EeqEditor::resized()
     typeBox.toFront(true);
     channelModeBox.toFront(true);
     slopeBox.toFront(true);
+    phaseInvertBtn.toFront(true);
 }
 
 // ===================== Presets =====================

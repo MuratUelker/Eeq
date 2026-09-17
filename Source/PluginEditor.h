@@ -92,6 +92,7 @@ private:
     juce::Slider dynThreshSlider;
     juce::ToggleButton dynAutoBtn{"Auto"};
     juce::ToggleButton scTriggerBtn{"SC"};
+    juce::ToggleButton phaseInvertBtn{"Ø"};
 
     static const juce::StringArray slopeNames;
 
