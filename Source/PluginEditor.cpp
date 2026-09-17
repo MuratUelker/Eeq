@@ -152,6 +152,7 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     freqSlider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xFFe94560));
     freqSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFFe94560));
     freqSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFe0e0ff));
+    freqSlider.setDoubleClickReturnValue(true, 1000.0);
     addAndMakeVisible(freqSlider);
     freqSlider.setVisible(false);
     freqSlider.addListener(this);
@@ -164,6 +165,7 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     gainSlider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xFF00b4d8));
     gainSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFF00b4d8));
     gainSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFe0e0ff));
+    gainSlider.setDoubleClickReturnValue(true, 0.0);
     addAndMakeVisible(gainSlider);
     gainSlider.setVisible(false);
     gainSlider.addListener(this);
@@ -176,6 +178,7 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     qSlider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xFF533483));
     qSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFF533483));
     qSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFe0e0ff));
+    qSlider.setDoubleClickReturnValue(true, 0.707);
     addAndMakeVisible(qSlider);
     qSlider.setVisible(false);
     qSlider.addListener(this);
@@ -231,6 +234,7 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     dynRangeSlider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xFF2a9d8f));
     dynRangeSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFF2a9d8f));
     dynRangeSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFe0e0ff));
+    dynRangeSlider.setDoubleClickReturnValue(true, 0.0);
     addAndMakeVisible(dynRangeSlider);
     dynRangeSlider.setVisible(false);
     dynRangeSlider.addListener(this);
@@ -241,6 +245,7 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     dynThreshSlider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xFF2a9d8f));
     dynThreshSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFF2a9d8f));
     dynThreshSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFe0e0ff));
+    dynThreshSlider.setDoubleClickReturnValue(true, -20.0);
     addAndMakeVisible(dynThreshSlider);
     dynThreshSlider.setVisible(false);
     dynThreshSlider.addListener(this);
@@ -284,6 +289,7 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     outputPanSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFFe0e0ff));
     outputPanSlider.setColour(juce::Slider::trackColourId, juce::Colour(0xFF2a2a4a));
     outputPanSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFe0e0ff));
+    outputPanSlider.setDoubleClickReturnValue(true, 0.0);
     addAndMakeVisible(outputPanSlider);
 
     panLabel.setJustificationType(juce::Justification::centred);
@@ -297,6 +303,7 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     gainScaleSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFFe94560));
     gainScaleSlider.setColour(juce::Slider::trackColourId, juce::Colour(0xFF2a2a4a));
     gainScaleSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFe0e0ff));
+    gainScaleSlider.setDoubleClickReturnValue(true, 1.0);
     addAndMakeVisible(gainScaleSlider);
 
     gainScaleLabel.setJustificationType(juce::Justification::centred);
