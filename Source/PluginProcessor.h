@@ -150,5 +150,15 @@ private:
     void saveStateToFile();
     void loadStateFromFile();
 
+    // User presets
+public:
+    void saveUserPreset(const juce::String& name);
+    void deleteUserPreset(const juce::String& name);
+    juce::StringArray getUserPresetNames() const;
+    void loadUserPreset(const juce::String& name);
+    juce::File getUserPresetFolder() const;
+
+private:
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(EeqProcessor)
 };

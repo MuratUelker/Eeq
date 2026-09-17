@@ -48,9 +48,7 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     setResizeLimits(800, 550, 2400, 1400);
     setWantsKeyboardFocus(true);
 
-    // === Top bar ===
-    for (const auto& name : factoryPresetNames)
-        presetSelector.addItem(name, presetSelector.getNumItems() + 1);
+    refreshPresetList();
     presetSelector.setSelectedId(1);
     presetSelector.setColour(juce::ComboBox::backgroundColourId, juce::Colour(0xFF16213e));
     presetSelector.setColour(juce::ComboBox::textColourId, juce::Colour(0xFFe0e0ff));
@@ -60,6 +58,7 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     savePresetBtn.setColour(juce::TextButton::buttonColourId, juce::Colour(0xFF16213e));
     savePresetBtn.setColour(juce::TextButton::textColourOffId, juce::Colour(0xFFe94560));
     addAndMakeVisible(savePresetBtn);
+    savePresetBtn.onClick = [this] { showSavePresetDialog(); };
 
     for (const auto& name : procModeNames)
         procModeBox.addItem(name, procModeBox.getNumItems() + 1);
@@ -1597,7 +1596,89 @@ void EeqEditor::resized()
 
 // ===================== Presets =====================
 
+void EeqEditor::refreshPresetList()
+{
+    presetSelector.clear();
+    int id = 1;
+    for (const auto& name : factoryPresetNames)
+        presetSelector.addItem("Factory: " + name, id++);
+
+    auto userPresets = processor.getUserPresetNames();
+    if (!userPresets.isEmpty())
+    {
+        presetSelector.addItem("--- User Presets ---", id++);
+        for (const auto& name : userPresets)
+            presetSelector.addItem(name, id++);
+    }
+}
+
+void EeqEditor::showSavePresetDialog()
+{
+    class PresetNameDialog : public juce::AlertWindow
+    {
+    public:
+        PresetNameDialog() : AlertWindow("Save Preset", "Enter preset name:", AlertWindow::NoIcon)
+        {
+            addTextEditor("name", "", "Preset name:");
+            addButton("Save", 1, juce::KeyPress(juce::KeyPress::returnKey));
+            addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+        }
+        
+        juce::String getName() const { return getTextEditorContents("name"); }
+    };
+
+    std::unique_ptr<PresetNameDialog> dialog(new PresetNameDialog());
+    dialog->enterModalState(true, juce::ModalCallbackFunction::create([this, dialog = dialog.get()](int result)
+    {
+        if (result == 1 && dialog)
+        {
+            juce::String name = dialog->getName().trim();
+            if (name.isNotEmpty())
+            {
+                processor.saveUserPreset(name);
+                refreshPresetList();
+                // Select the newly saved preset
+                for (int i = 1; i <= presetSelector.getNumItems(); ++i)
+                {
+                    if (presetSelector.getItemText(i) == name)
+                    {
+                        presetSelector.setSelectedId(i);
+                        break;
+                    }
+                }
+            }
+        }
+    }));
+}
+
 void EeqEditor::loadPreset(int index)
+{
+    if (index < 0) return;
+
+    // Check if it's a separator
+    auto text = presetSelector.getItemText(index + 1);
+    if (text.startsWith("---") || text.startsWith("Factory:"))
+    {
+        // Handle factory presets
+        int factoryIndex = 0;
+        for (const auto& name : factoryPresetNames)
+        {
+            if (text == "Factory: " + name)
+            {
+                loadFactoryPreset(factoryIndex);
+                return;
+            }
+            factoryIndex++;
+        }
+        return;
+    }
+
+    // User preset
+    processor.loadUserPreset(text);
+    updateAllControlsFromProcessor();
+}
+
+void EeqEditor::loadFactoryPreset(int index)
 {
     if (index < 0 || index >= (int)factoryPresets.size()) return;
     const auto& preset = factoryPresets[index];
@@ -1632,5 +1713,17 @@ void EeqEditor::loadPreset(int index)
         }
     }
 
+    selectBand(-1);
+}
+
+void EeqEditor::updateAllControlsFromProcessor()
+{
+    for (int i = 0; i < NUM_BANDS; ++i)
+    {
+        if (selectedBand == i || multiSelectedBands.empty() || std::find(multiSelectedBands.begin(), multiSelectedBands.end(), i) != multiSelectedBands.end())
+        {
+            updateBandFromControls(i);
+        }
+    }
     selectBand(-1);
 }

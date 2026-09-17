@@ -158,6 +158,10 @@ private:
     juce::Rectangle<float> getBandControlsBounds() const;
 
     void loadPreset(int index);
+    void refreshPresetList();
+    void showSavePresetDialog();
+    void loadFactoryPreset(int index);
+    void updateAllControlsFromProcessor();
 
     int freqToMidiKey(float freq) const;
     float midiKeyToFreq(int key) const;

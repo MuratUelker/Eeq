@@ -481,7 +481,79 @@ void EeqProcessor::loadStateFromFile()
         autoGainEnabled = state.getProperty("autoGain", true);
         outputPan = state.getProperty("outputPan", 0.0f);
         currentMode = (ProcessingMode)(int)state.getProperty("procMode", 0);
+        lpResolution = (LinearPhaseResolution)(int)state.getProperty("lpResolution", (int)LinearPhaseResolution::High);
         displayRange = state.getProperty("displayRange", 30.0f);
+        equalizer.setLinearPhaseResolution(lpResolution);
+    }
+}
+
+juce::File EeqProcessor::getUserPresetFolder() const
+{
+    return juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
+        .getChildFile("Eeq").getChildFile("Presets");
+}
+
+void EeqProcessor::saveUserPreset(const juce::String& name)
+{
+    auto folder = getUserPresetFolder();
+    folder.createDirectory();
+
+    auto state = apvts.copyState();
+    state.setProperty("gainScale", gainScale, nullptr);
+    state.setProperty("phaseInverted", phaseInverted, nullptr);
+    state.setProperty("autoGain", autoGainEnabled, nullptr);
+    state.setProperty("outputPan", outputPan, nullptr);
+    state.setProperty("procMode", (int)currentMode, nullptr);
+    state.setProperty("lpResolution", (int)lpResolution, nullptr);
+    state.setProperty("displayRange", displayRange, nullptr);
+
+    std::unique_ptr<juce::XmlElement> xml(state.createXml());
+    auto file = folder.getChildFile(name + ".xml");
+    xml->writeTo(file);
+}
+
+void EeqProcessor::deleteUserPreset(const juce::String& name)
+{
+    auto folder = getUserPresetFolder();
+    auto file = folder.getChildFile(name + ".xml");
+    if (file.existsAsFile())
+        file.deleteFile();
+}
+
+juce::StringArray EeqProcessor::getUserPresetNames() const
+{
+    juce::StringArray names;
+    auto folder = getUserPresetFolder();
+    if (folder.isDirectory())
+    {
+        juce::Array<juce::File> files;
+        folder.findChildFiles(files, juce::File::findFiles, true, "*.xml");
+        for (auto& f : files)
+            names.add(f.getFileNameWithoutExtension());
+    }
+    return names;
+}
+
+void EeqProcessor::loadUserPreset(const juce::String& name)
+{
+    auto folder = getUserPresetFolder();
+    auto file = folder.getChildFile(name + ".xml");
+    if (!file.existsAsFile()) return;
+
+    std::unique_ptr<juce::XmlElement> xml(juce::XmlDocument::parse(file));
+    if (xml && xml->hasTagName(apvts.state.getType()))
+    {
+        auto state = juce::ValueTree::fromXml(*xml);
+        apvts.replaceState(state);
+        gainScale = state.getProperty("gainScale", 1.0f);
+        phaseInverted = state.getProperty("phaseInverted", false);
+        autoGainEnabled = state.getProperty("autoGain", true);
+        outputPan = state.getProperty("outputPan", 0.0f);
+        currentMode = (ProcessingMode)(int)state.getProperty("procMode", 0);
+        lpResolution = (LinearPhaseResolution)(int)state.getProperty("lpResolution", (int)LinearPhaseResolution::High);
+        displayRange = state.getProperty("displayRange", 30.0f);
+        equalizer.setProcessingMode(currentMode);
+        equalizer.setLinearPhaseResolution(lpResolution);
     }
 }
 
