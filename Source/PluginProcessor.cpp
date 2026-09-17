@@ -85,6 +85,19 @@ juce::AudioProcessorValueTreeState::ParameterLayout EeqProcessor::createLayout()
         juce::ParameterID{"autoGainChannelWeight", 1}, "Auto Gain Channel Weight",
         juce::NormalisableRange<float>(0.0f, 1.0f, 0.01f), 0.5f));
 
+    // Sidechain Filter
+    layout.add(std::make_unique<juce::AudioParameterBool>(
+        juce::ParameterID{"scFilterEnabled", 1}, "SC Filter Enabled", false));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID{"scFilterFreq", 1}, "SC Filter Freq",
+        juce::NormalisableRange<float>(20.0f, 22000.0f, 0.1f, 0.3f), 1000.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID{"scFilterQ", 1}, "SC Filter Q",
+        juce::NormalisableRange<float>(0.1f, 10.0f, 0.01f, 0.4f), 0.707f));
+    layout.add(std::make_unique<juce::AudioParameterChoice>(
+        juce::ParameterID{"scFilterType", 1}, "SC Filter Type",
+        juce::StringArray{"Bell", "Low Cut", "High Cut"}, 0));
+
     return layout;
 }
 
@@ -118,6 +131,8 @@ void EeqProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
     equalizer.prepare(sampleRate, samplesPerBlock);
     spectrum.prepare(sampleRate);
     sidechainSpectrum.prepare(sampleRate);
+    scFilterL.prepare(sampleRate);
+    scFilterR.prepare(sampleRate);
     undoStack.clear();
     redoStack.clear();
 }
@@ -210,6 +225,12 @@ void EeqProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuff
     }
 
     equalizer.setGainScale(gainScale);
+
+    // Update sidechain filter parameters
+    scFilterEnabled = apvts.getRawParameterValue("scFilterEnabled")->load() > 0.5f;
+    scFilterFreq = apvts.getRawParameterValue("scFilterFreq")->load();
+    scFilterQ = apvts.getRawParameterValue("scFilterQ")->load();
+    scFilterType = (int)apvts.getRawParameterValue("scFilterType")->load();
 
     // Check for processing mode change
     ProcessingMode newMode = (ProcessingMode)(int)apvts.getRawParameterValue("procMode")->load();
@@ -372,11 +393,42 @@ void EeqProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuff
         outputLevelR = 20.0f * std::log10(std::sqrt(sumR / (float)numSamples) + 1e-10f);
         }
 
-    // Process sidechain input if available
+// Process sidechain input if available
     if (getTotalNumInputChannels() > 2)
     {
         auto* scLeft = buffer.getWritePointer(2);
         auto* scRight = buffer.getNumChannels() > 3 ? buffer.getWritePointer(3) : scLeft;
+        sidechainSpectrum.pushSamples(scLeft, numSamples);
+
+        // Apply sidechain filter if enabled
+        if (scFilterEnabled)
+        {
+            // Update filter coefficients if parameters changed
+            static float lastFreq = -1.0f, lastQ = -1.0f;
+            static int lastType = -1;
+            
+            if (scFilterFreq != lastFreq || scFilterQ != lastQ || scFilterType != lastType)
+            {
+                FilterType filterType;
+                switch (scFilterType)
+                {
+                    case 0: filterType = FilterType::Bell; break;
+                    case 1: filterType = FilterType::LowCut; break;
+                    case 2: filterType = FilterType::HighCut; break;
+                    default: filterType = FilterType::Bell;
+                }
+                scFilterL.setParams(scFilterFreq, 0.0f, scFilterQ, filterType);
+                scFilterR.setParams(scFilterFreq, 0.0f, scFilterQ, filterType);
+                lastFreq = scFilterFreq;
+                lastQ = scFilterQ;
+                lastType = scFilterType;
+            }
+            
+            // Apply filter to sidechain signals
+            scFilterL.processLeft(scLeft, numSamples);
+            scFilterR.processRight(scRight, numSamples);
+        }
+
         sidechainSpectrum.pushSamples(scLeft, numSamples);
 
         float scSumL = 0.0f, scSumR = 0.0f;
@@ -385,7 +437,7 @@ void EeqProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuff
             scSumL += scLeft[s] * scLeft[s];
             scSumR += scRight[s] * scRight[s];
         }
-float scRmsL = std::sqrt(scSumL / (float)numSamples);
+        float scRmsL = std::sqrt(scSumL / (float)numSamples);
         float scRmsR = std::sqrt(scSumR / (float)numSamples);
         equalizer.setSidechainLevels(scRmsL, scRmsR);
     }
@@ -485,6 +537,10 @@ void EeqProcessor::getStateInformation(juce::MemoryBlock& destData)
     state.setProperty("lpResolution", (int)lpResolution, nullptr);
     state.setProperty("npResolution", (int)npResolution, nullptr);
     state.setProperty("displayRange", displayRange, nullptr);
+    state.setProperty("scFilterEnabled", scFilterEnabled, nullptr);
+    state.setProperty("scFilterFreq", scFilterFreq, nullptr);
+    state.setProperty("scFilterQ", scFilterQ, nullptr);
+    state.setProperty("scFilterType", scFilterType, nullptr);
     std::unique_ptr<juce::XmlElement> xml(state.createXml());
     copyXmlToBinary(*xml, destData);
 }
@@ -503,6 +559,10 @@ void EeqProcessor::setStateInformation(const void* data, int sizeInBytes)
         currentMode = (ProcessingMode)(int)state.getProperty("procMode", 0);
         lpResolution = (LinearPhaseResolution)(int)state.getProperty("lpResolution", (int)LinearPhaseResolution::High);
         npResolution = (NaturalPhaseResolution)(int)state.getProperty("npResolution", (int)NaturalPhaseResolution::High);
+        scFilterEnabled = state.getProperty("scFilterEnabled", false);
+        scFilterFreq = state.getProperty("scFilterFreq", 1000.0f);
+        scFilterQ = state.getProperty("scFilterQ", 0.707f);
+        scFilterType = state.getProperty("scFilterType", 0);
         equalizer.setLinearPhaseResolution(lpResolution);
         equalizer.setNaturalPhaseResolution(npResolution);
     }
@@ -735,6 +795,10 @@ void EeqProcessor::saveUserPreset(const juce::String& name)
     state.setProperty("lpResolution", (int)lpResolution, nullptr);
     state.setProperty("npResolution", (int)npResolution, nullptr);
     state.setProperty("displayRange", displayRange, nullptr);
+    state.setProperty("scFilterEnabled", scFilterEnabled, nullptr);
+    state.setProperty("scFilterFreq", scFilterFreq, nullptr);
+    state.setProperty("scFilterQ", scFilterQ, nullptr);
+    state.setProperty("scFilterType", scFilterType, nullptr);
 
     std::unique_ptr<juce::XmlElement> xml(state.createXml());
     auto file = folder.getChildFile(name + ".xml");
@@ -781,6 +845,10 @@ void EeqProcessor::loadUserPreset(const juce::String& name)
         currentMode = (ProcessingMode)(int)state.getProperty("procMode", 0);
         lpResolution = (LinearPhaseResolution)(int)state.getProperty("lpResolution", (int)LinearPhaseResolution::High);
         npResolution = (NaturalPhaseResolution)(int)state.getProperty("npResolution", (int)NaturalPhaseResolution::High);
+        scFilterEnabled = state.getProperty("scFilterEnabled", false);
+        scFilterFreq = state.getProperty("scFilterFreq", 1000.0f);
+        scFilterQ = state.getProperty("scFilterQ", 0.707f);
+        scFilterType = state.getProperty("scFilterType", 0);
         displayRange = state.getProperty("displayRange", 30.0f);
         equalizer.setProcessingMode(currentMode);
         equalizer.setLinearPhaseResolution(lpResolution);

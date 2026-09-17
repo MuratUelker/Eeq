@@ -127,6 +127,16 @@ public:
     float getOutputLevelL() const { return outputLevelL; }
     float getOutputLevelR() const { return outputLevelR; }
 
+    // Sidechain Filter
+    float getSCFilterFreq() const { return scFilterFreq; }
+    void setSCFilterFreq(float freq) { scFilterFreq = juce::jlimit(20.0f, 22000.0f, freq); }
+    float getSCFilterQ() const { return scFilterQ; }
+    void setSCFilterQ(float q) { scFilterQ = juce::jlimit(0.1f, 10.0f, q); }
+    int getSCFilterType() const { return scFilterType; }
+    void setSCFilterType(int type) { scFilterType = juce::jlimit(0, 2, type); }
+    bool isSCFilterEnabled() const { return scFilterEnabled; }
+    void setSCFilterEnabled(bool enabled) { scFilterEnabled = enabled; }
+
     // MIDI Learn
     struct MidiMapping { int band; juce::String param; int cc; int channel; };
     void setMidiLearnActive(bool active);
@@ -152,6 +162,8 @@ private:
     Equalizer equalizer;
     SpectrumAnalyzer spectrum;
     SpectrumAnalyzer sidechainSpectrum;
+    BiquadFilter scFilterL;
+    BiquadFilter scFilterR;
     juce::AudioProcessorValueTreeState apvts;
     juce::AudioProcessorValueTreeState::ParameterLayout createLayout();
 
@@ -169,6 +181,12 @@ private:
     float outputLevelL = -60.0f;
     float outputLevelR = -60.0f;
     bool eqMatchActive = false;
+
+    // Sidechain Filter
+    float scFilterFreq = 1000.0f;
+    float scFilterQ = 0.707f;
+    int scFilterType = 0; // 0=Bell, 1=LowCut, 2=HighCut
+    bool scFilterEnabled = false;
 
     // MIDI Learn
     bool midiLearnActive = false;
