@@ -41,6 +41,14 @@ void SpectrumAnalyzer::pushSamples(const float* data, int numSamples)
 
 void SpectrumAnalyzer::processFFT()
 {
+    // Zero out denormals in buffer before processing
+    for (int i = 0; i < fftSize; ++i)
+    {
+        float s = fftBuffer[i];
+        if (s > -1e-15f && s < 1e-15f)
+            fftBuffer[i] = 0.0f;
+    }
+
     // Hann window
     for (int i = 0; i < fftSize; ++i)
         fftBuffer[i] *= 0.5f * (1.0f - std::cos(2.0f * 3.14159265f * i / (fftSize - 1)));
@@ -56,7 +64,16 @@ void SpectrumAnalyzer::processFFT()
     for (int i = 1; i < numBins && i < MAX_BINS; ++i)
     {
         float mag = std::sqrt(real[i] * real[i] + imag[i] * imag[i]) / (float)fftSize;
-        float db = 20.0f * std::log10f(std::max(mag, 1e-10f));
+
+        // Noise gate: ignore very small values
+        if (mag < 1e-7f)
+        {
+            if (!frozen)
+                spectrum[i] *= decayRate;
+            continue;
+        }
+
+        float db = 20.0f * std::log10f(mag);
 
         // Apply tilt (pink noise normalization)
         float freq = (float)i / (float)numBins * nyquist;
