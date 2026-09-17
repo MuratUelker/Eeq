@@ -15,6 +15,8 @@ struct EQSnapshot
     std::array<bool, MAX_BANDS> dynEnabled{};
     std::array<float, MAX_BANDS> dynRange{};
     std::array<float, MAX_BANDS> dynThreshold{};
+    std::array<bool, MAX_BANDS> solos{};
+    std::array<bool, MAX_BANDS> bypasses{};
     float gainScale = 1.0f;
 };
 
@@ -91,6 +93,11 @@ public:
     // Sidechain
     bool hasSidechain() const { return true; }
 
+    // EQ Match
+    void applyEQMatch();
+    bool isEQMatchActive() const { return eqMatchActive; }
+    void setEQMatchActive(bool active) { eqMatchActive = active; }
+
     // Gain scale
     float getGainScale() const { return gainScale; }
     void setGainScale(float scale) { gainScale = scale; }
@@ -98,6 +105,10 @@ public:
     // Display range
     float getDisplayRange() const { return displayRange; }
     void setDisplayRange(float range) { displayRange = range; }
+
+    // Output meter
+    float getOutputLevelL() const { return outputLevelL; }
+    float getOutputLevelR() const { return outputLevelR; }
 
 private:
     Equalizer equalizer;
@@ -113,6 +124,9 @@ private:
     float outputPan = 0.0f;
     float gainScale = 1.0f;
     float displayRange = 30.0f;
+    float outputLevelL = -60.0f;
+    float outputLevelR = -60.0f;
+    bool eqMatchActive = false;
 
     // Undo/Redo
     static constexpr int MAX_UNDO = 50;

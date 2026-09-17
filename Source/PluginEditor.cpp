@@ -401,6 +401,8 @@ void EeqEditor::updateControlsFromBand(int idx)
     int typeIdx = (int)apvts.getRawParameterValue("b" + id + "_type")->load();
     int chIdx = (int)apvts.getRawParameterValue("b" + id + "_ch")->load();
     bool active = apvts.getRawParameterValue("b" + id + "_active")->load() > 0.5f;
+    bool solo = apvts.getRawParameterValue("b" + id + "_solo")->load() > 0.5f;
+    bool bypass = apvts.getRawParameterValue("b" + id + "_bypass")->load() > 0.5f;
     bool dyn = apvts.getRawParameterValue("b" + id + "_dyn")->load() > 0.5f;
     float dynR = apvts.getRawParameterValue("b" + id + "_dynRange")->load();
     float dynT = apvts.getRawParameterValue("b" + id + "_dynThresh")->load();
@@ -412,6 +414,8 @@ void EeqEditor::updateControlsFromBand(int idx)
     typeBox.setSelectedId(typeIdx + 1, juce::dontSendNotification);
     channelModeBox.setSelectedId(chIdx + 1, juce::dontSendNotification);
     dynBtn.setToggleState(dyn, juce::dontSendNotification);
+    soloBtn.setToggleState(solo, juce::dontSendNotification);
+    bandBypassBtn.setToggleState(bypass, juce::dontSendNotification);
     dynRangeSlider.setValue(dynR, juce::dontSendNotification);
     dynThreshSlider.setValue(dynT, juce::dontSendNotification);
     dynAutoBtn.setToggleState(dynA, juce::dontSendNotification);
@@ -652,7 +656,19 @@ void EeqEditor::mouseDown(const juce::MouseEvent& e)
 void EeqEditor::mouseDrag(const juce::MouseEvent& e)
 {
     if (dragging && selectedBand >= 0)
+    {
         updateBandFromMouse(selectedBand, e.position.x, e.position.y);
+
+        // Multi-band drag
+        if (e.mods.isCommandDown() && multiSelectedBands.size() > 1)
+        {
+            for (int b : multiSelectedBands)
+            {
+                if (b != selectedBand && bandVisuals[b].active)
+                    updateBandFromMouse(b, e.position.x, e.position.y);
+            }
+        }
+    }
 }
 
 void EeqEditor::mouseUp(const juce::MouseEvent&) { dragging = false; }
@@ -680,7 +696,14 @@ void EeqEditor::mouseWheelMove(const juce::MouseEvent& e, const juce::MouseWheel
         return;
     }
 
-    if (selectedBand < 0) return;
+    if (selectedBand < 0)
+    {
+        // Change display range
+        float range = processor.getDisplayRange();
+        range = juce::jlimit(6.0f, 60.0f, range - wheel.deltaY * 3.0f);
+        processor.setDisplayRange(range);
+        return;
+    }
     auto id = juce::String(selectedBand + 1);
 
     if (e.mods.isAltDown())
@@ -808,10 +831,15 @@ void EeqEditor::buttonClicked(juce::Button* btn)
     else if (btn == &soloBtn && selectedBand >= 0)
     {
         auto id = juce::String(selectedBand + 1);
+        processor.getAPVTS().getParameter("b" + id + "_solo")->setValueNotifyingHost(
+            soloBtn.getToggleState() ? 1.0f : 0.0f);
         bandVisuals[selectedBand].soloed = soloBtn.getToggleState();
     }
     else if (btn == &bandBypassBtn && selectedBand >= 0)
     {
+        auto id = juce::String(selectedBand + 1);
+        processor.getAPVTS().getParameter("b" + id + "_bypass")->setValueNotifyingHost(
+            bandBypassBtn.getToggleState() ? 1.0f : 0.0f);
         bandVisuals[selectedBand].bypassed = bandBypassBtn.getToggleState();
     }
     else if (btn == &dynBtn && selectedBand >= 0)
@@ -848,6 +876,10 @@ void EeqEditor::buttonClicked(juce::Button* btn)
     }
     else if (btn == &eqMatchApplyBtn)
     {
+        processor.applyEQMatch();
+        eqMatchCapturing = false;
+        processor.getSpectrumAnalyzer().setFreeze(false);
+        eqMatchCaptureBtn.setButtonText("Capture");
     }
 }
 
@@ -1037,6 +1069,8 @@ void EeqEditor::drawBandNodes(juce::Graphics& g, juce::Rectangle<float> d)
         bool active = apvts.getRawParameterValue("b" + id + "_active")->load() > 0.5f;
 
         bandVisuals[i].active = active;
+        bandVisuals[i].soloed = apvts.getRawParameterValue("b" + id + "_solo")->load() > 0.5f;
+        bandVisuals[i].bypassed = apvts.getRawParameterValue("b" + id + "_bypass")->load() > 0.5f;
         if (!active) continue;
 
         float x = freqToX(freq, d);
@@ -1187,8 +1221,8 @@ void EeqEditor::drawOutputMeter(juce::Graphics& g, juce::Rectangle<float> d)
     g.fillRect(d.getX(), d.getY() + 2, meterW, meterH);
     g.fillRect(d.getX() + meterW + 2, d.getY() + 2, meterW, meterH);
 
-    float levelL = juce::jlimit(0.0f, 1.0f, (outputLevelL + 60.0f) / 60.0f);
-    float levelR = juce::jlimit(0.0f, 1.0f, (outputLevelR + 60.0f) / 60.0f);
+    float levelL = juce::jlimit(0.0f, 1.0f, (processor.getOutputLevelL() + 60.0f) / 60.0f);
+    float levelR = juce::jlimit(0.0f, 1.0f, (processor.getOutputLevelR() + 60.0f) / 60.0f);
 
     auto drawMeterBar = [&](float x, float level)
     {

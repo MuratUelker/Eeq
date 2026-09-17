@@ -44,6 +44,15 @@ juce::AudioProcessorValueTreeState::ParameterLayout EeqProcessor::createLayout()
             juce::ParameterID{"b" + id + "_dynAuto", 1}, "Band " + id + " Auto Threshold", true));
     }
 
+    for (int i = 0; i < MAX_BANDS; ++i)
+    {
+        auto id = juce::String(i + 1);
+        layout.add(std::make_unique<juce::AudioParameterBool>(
+            juce::ParameterID{"b" + id + "_solo", 1}, "Band " + id + " Solo", false));
+        layout.add(std::make_unique<juce::AudioParameterBool>(
+            juce::ParameterID{"b" + id + "_bypass", 1}, "Band " + id + " Bypass", false));
+    }
+
     return layout;
 }
 
@@ -95,6 +104,8 @@ void EeqProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuff
         state.q = apvts.getRawParameterValue("b" + id + "_q")->load();
         int typeIdx = (int)apvts.getRawParameterValue("b" + id + "_type")->load();
         state.active = apvts.getRawParameterValue("b" + id + "_active")->load() > 0.5f;
+        state.soloed = apvts.getRawParameterValue("b" + id + "_solo")->load() > 0.5f;
+        state.bypassed = apvts.getRawParameterValue("b" + id + "_bypass")->load() > 0.5f;
         int chIdx = (int)apvts.getRawParameterValue("b" + id + "_ch")->load();
         state.dynamic.enabled = apvts.getRawParameterValue("b" + id + "_dyn")->load() > 0.5f;
         state.dynamic.dynamicRange = apvts.getRawParameterValue("b" + id + "_dynRange")->load();
@@ -121,7 +132,10 @@ void EeqProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuff
         auto* left = buffer.getWritePointer(0);
         auto* right = buffer.getWritePointer(1);
 
-        equalizer.process(left, right, numSamples);
+        if (currentMode == ProcessingMode::LinearPhase)
+            equalizer.processLinearPhase(left, right, numSamples);
+        else
+            equalizer.process(left, right, numSamples);
 
         // Auto Gain compensation
         if (autoGainEnabled)
@@ -161,6 +175,16 @@ void EeqProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuff
         }
 
         spectrum.pushSamples(left, numSamples);
+
+        // Output meter levels (RMS)
+        float sumL = 0.0f, sumR = 0.0f;
+        for (int s = 0; s < numSamples; ++s)
+        {
+            sumL += left[s] * left[s];
+            sumR += right[s] * right[s];
+        }
+        outputLevelL = 20.0f * std::log10(std::sqrt(sumL / (float)numSamples) + 1e-10f);
+        outputLevelR = 20.0f * std::log10(std::sqrt(sumR / (float)numSamples) + 1e-10f);
     }
 
     // Process sidechain input if available
@@ -187,6 +211,8 @@ EQSnapshot EeqProcessor::captureState()
         s.dynEnabled[i] = apvts.getRawParameterValue("b" + id + "_dyn")->load() > 0.5f;
         s.dynRange[i] = apvts.getRawParameterValue("b" + id + "_dynRange")->load();
         s.dynThreshold[i] = apvts.getRawParameterValue("b" + id + "_dynThresh")->load();
+        s.solos[i] = apvts.getRawParameterValue("b" + id + "_solo")->load() > 0.5f;
+        s.bypasses[i] = apvts.getRawParameterValue("b" + id + "_bypass")->load() > 0.5f;
     }
     s.gainScale = gainScale;
     return s;
@@ -213,6 +239,8 @@ void EeqProcessor::applyState(const EQSnapshot& s)
             apvts.getParameter("b" + id + "_dynRange")->convertTo0to1(s.dynRange[i]));
         apvts.getParameter("b" + id + "_dynThresh")->setValueNotifyingHost(
             apvts.getParameter("b" + id + "_dynThresh")->convertTo0to1(s.dynThreshold[i]));
+        apvts.getParameter("b" + id + "_solo")->setValueNotifyingHost(s.solos[i] ? 1.0f : 0.0f);
+        apvts.getParameter("b" + id + "_bypass")->setValueNotifyingHost(s.bypasses[i] ? 1.0f : 0.0f);
     }
     gainScale = s.gainScale;
 }
@@ -270,6 +298,52 @@ void EeqProcessor::setStateInformation(const void* data, int sizeInBytes)
         autoGainEnabled = state.getProperty("autoGain", true);
         outputPan = state.getProperty("outputPan", 0.0f);
         currentMode = (ProcessingMode)(int)state.getProperty("procMode", 0);
+    }
+}
+
+void EeqProcessor::applyEQMatch()
+{
+    auto& analyzer = getSpectrumAnalyzer();
+    const auto& capture = analyzer.getCaptureSpectrum();
+    int captureCount = analyzer.getCaptureCount();
+    if (captureCount < 10) return;
+
+    float sr = analyzer.getSampleRate();
+    int numBins = analyzer.getNumBins();
+    float nyquist = sr * 0.5f;
+
+    pushUndoState();
+
+    // Find the first inactive band and set it to match the captured spectrum
+    // Simple approach: place bands at frequency points where capture has significant deviation
+    int bandIdx = 0;
+    float freqPoints[] = {60, 120, 250, 500, 1000, 2000, 4000, 8000, 12000, 16000};
+
+    for (float freq : freqPoints)
+    {
+        if (bandIdx >= MAX_BANDS) break;
+
+        int bin = (int)(freq / nyquist * (float)numBins);
+        bin = juce::jlimit(0, numBins - 1, bin);
+        float magVal = capture[bin];
+
+        // Convert from normalized 0-1 to dB approximation
+        float magDB = (magVal - 0.5f) * 60.0f;
+
+        if (std::abs(magDB) < 0.5f) continue;
+
+        auto id = juce::String(bandIdx + 1);
+        apvts.getParameter("b" + id + "_freq")->setValueNotifyingHost(
+            apvts.getParameter("b" + id + "_freq")->convertTo0to1(freq));
+        apvts.getParameter("b" + id + "_gain")->setValueNotifyingHost(
+            apvts.getParameter("b" + id + "_gain")->convertTo0to1(-magDB));
+        apvts.getParameter("b" + id + "_q")->setValueNotifyingHost(
+            apvts.getParameter("b" + id + "_q")->convertTo0to1(1.0f));
+        apvts.getParameter("b" + id + "_type")->setValueNotifyingHost(
+            apvts.getParameter("b" + id + "_type")->convertTo0to1(0));
+        apvts.getParameter("b" + id + "_active")->setValueNotifyingHost(1.0f);
+
+        bandIdx++;
     }
 }
 
