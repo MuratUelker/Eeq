@@ -41,11 +41,12 @@ void SpectrumAnalyzer::pushSamples(const float* data, int numSamples)
 
 void SpectrumAnalyzer::processFFT()
 {
-    // Zero out denormals in buffer before processing
+    // aggressive silence gate: zero out samples below threshold
+    const float silenceThreshold = 1e-6f;
     for (int i = 0; i < fftSize; ++i)
     {
         float s = fftBuffer[i];
-        if (s > -1e-15f && s < 1e-15f)
+        if (s > -silenceThreshold && s < silenceThreshold)
             fftBuffer[i] = 0.0f;
     }
 
@@ -61,12 +62,19 @@ void SpectrumAnalyzer::processFFT()
     fftRadix2(real.data(), imag.data(), fftSize);
 
     float nyquist = (float)fs * 0.5f;
-    for (int i = 1; i < numBins && i < MAX_BINS; ++i)
+
+    // Force lowest 4 bins to zero (DC + low-frequency drift / windowing artifacts)
+    for (int i = 1; i < 4 && i < numBins; ++i)
+    {
+        if (!frozen)
+            spectrum[i] *= decayRate;
+    }
+
+    for (int i = 4; i < numBins && i < MAX_BINS; ++i)
     {
         float mag = std::sqrt(real[i] * real[i] + imag[i] * imag[i]) / (float)fftSize;
 
-        // Noise gate: ignore very small values
-        if (mag < 1e-7f)
+        if (mag < 1e-6f)
         {
             if (!frozen)
                 spectrum[i] *= decayRate;

@@ -1156,6 +1156,9 @@ void EeqEditor::drawSpectrum(juce::Graphics& g, juce::Rectangle<float> d)
         bin = juce::jlimit(0, numBins - 1, bin);
         float mag = data[bin];
 
+        // Clamp very small values to zero to prevent low-end flicker
+        if (mag < 0.005f) mag = 0.0f;
+
         float x = d.getX() + (float)px;
         float y = d.getY() + d.getHeight() * (1.0f - mag);
 
@@ -1198,6 +1201,7 @@ void EeqEditor::drawSpectrum(juce::Graphics& g, juce::Rectangle<float> d)
         int bin = (int)(freq / nyquist * (float)numBins);
         bin = juce::jlimit(0, numBins - 1, bin);
         float peak = peaks[bin];
+        if (peak < 0.005f) continue;
         float y = d.getY() + d.getHeight() * (1.0f - peak);
         g.setColour(juce::Colour(0xFF00ff88).withAlpha(0.3f));
         g.drawLine(d.getX() + (float)px, y, d.getX() + (float)px + 1.0f, y, 1.0f);
