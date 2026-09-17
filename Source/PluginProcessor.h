@@ -65,6 +65,10 @@ public:
     LinearPhaseResolution getLinearPhaseResolution() const { return lpResolution; }
     void setLinearPhaseResolution(LinearPhaseResolution res) { lpResolution = res; equalizer.setLinearPhaseResolution(res); }
 
+    // Natural Phase Resolution
+    NaturalPhaseResolution getNaturalPhaseResolution() const { return npResolution; }
+    void setNaturalPhaseResolution(NaturalPhaseResolution res) { npResolution = res; equalizer.setNaturalPhaseResolution(res); }
+
     // Phase Invert
     bool isPhaseInverted() const { return phaseInverted; }
     void setPhaseInverted(bool inv) { phaseInverted = inv; }
@@ -144,6 +148,7 @@ private:
     double currentSampleRate = 44100.0;
     ProcessingMode currentMode = ProcessingMode::ZeroLatency;
     LinearPhaseResolution lpResolution = LinearPhaseResolution::High;
+    NaturalPhaseResolution npResolution = NaturalPhaseResolution::High;
     bool phaseInverted = false;
     bool autoGainEnabled = true;
     float outputPan = 0.0f;

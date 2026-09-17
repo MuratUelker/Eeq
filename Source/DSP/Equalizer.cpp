@@ -35,6 +35,23 @@ void Equalizer::prepare(double sampleRate, int samplesPerBlock)
 
     int fftSize = static_cast<int>(lpResolution);
     allocateLinearPhaseBuffers(fftSize);
+
+    int npFftSize = static_cast<int>(npResolution);
+    allocateNaturalPhaseBuffers(npFftSize);
+}
+
+void Equalizer::allocateNaturalPhaseBuffers(int size)
+{
+    npFftSize = size;
+    npFftHalf = size / 2;
+
+    npOverlapL.assign(npFftSize, 0.0f);
+    npOverlapR.assign(npFftSize, 0.0f);
+    npInputBufferL.assign(npFftSize, 0.0f);
+    npInputBufferR.assign(npFftSize, 0.0f);
+
+    npWritePos = 0;
+    npReady = false;
 }
 
 void Equalizer::processDynamicEQ(int bandIdx, float& gain, float inputLevel)
@@ -467,6 +484,153 @@ void Equalizer::processLinearPhase(float* left, float* right, int numSamples)
 
     if (numSamples > avail)
     {
+        for (int i = 0; i < MAX_BANDS; ++i)
+        {
+            if (!bands[i].active || bands[i].bypassed) continue;
+            float effectiveGain = bands[i].gain * gainScale;
+            bool isCutFilter = (bands[i].type == FilterType::LowCut || bands[i].type == FilterType::HighCut);
+            int numStages = isCutFilter ? slopeToStages(bands[i].slope) : 1;
+
+            for (int s = 0; s < numStages; ++s)
+                filterStages[i][s].setParams(bands[i].freq, effectiveGain, bands[i].q, bands[i].type);
+
+            switch (bands[i].channelMode)
+            {
+            case ChannelMode::Stereo:
+                for (int s = 0; s < numStages; ++s)
+                    filterStages[i][s].processStereo(left + avail, right + avail, numSamples - avail);
+                break;
+            case ChannelMode::Mid:
+                for (int s = 0; s < numStages; ++s)
+                    filterStages[i][s].processMidSide(left + avail, right + avail, numSamples - avail, true);
+                break;
+            case ChannelMode::Side:
+                for (int s = 0; s < numStages; ++s)
+                    filterStages[i][s].processMidSide(left + avail, right + avail, numSamples - avail, false);
+                break;
+            case ChannelMode::Left:
+                for (int s = 0; s < numStages; ++s)
+                    filterStages[i][s].processLeft(left + avail, numSamples - avail);
+                break;
+            case ChannelMode::Right:
+                for (int s = 0; s < numStages; ++s)
+                    filterStages[i][s].processRight(right + avail, numSamples - avail);
+                break;
+            }
+        }
+    }
+}
+
+void Equalizer::processNaturalPhase(float* left, float* right, int numSamples)
+{
+    if (numSamples <= 0) return;
+
+    // Natural Phase: Hybrid approach using minimum phase filters + allpass phase correction
+    // 1. Process with minimum phase filters (like Zero Latency)
+    // 2. Apply allpass phase correction to reduce phase distortion
+    // 3. Use overlap-add with FFT for the allpass correction part
+
+    if (responseDirty)
+    {
+        eqResponse[0] = std::complex<float>(1.0f, 0.0f);
+        computeEQFrequencyResponse(eqResponse.data(), fftHalf, (float)currentSampleRate);
+        for (int k = 1; k < fftHalf; ++k)
+            eqResponse[fftSize - k] = std::conj(eqResponse[k]);
+        responseDirty = false;
+    }
+
+    // Compute allpass phase correction response (phase-only, magnitude = 1)
+    // For Natural Phase, we want to cancel some of the minimum phase filter's phase shift
+    // We'll use a simplified approach: apply the minimum phase EQ, then correct phase
+    
+    // First, process with minimum phase filters (same as Zero Latency)
+    process(left, right, numSamples);
+    
+    // Then apply allpass phase correction via FFT
+    // The allpass response is: H_ap(z) = H_min(z) / |H_min(z)| = e^{-j*phase(H_min)}
+    // We want to apply a partial correction to reduce phase distortion without pre-ringing
+    
+    // For simplicity, we'll use a lighter FFT-based approach with shorter latency
+    for (int s = 0; s < numSamples; ++s)
+    {
+        npInputBufferL[npWritePos] = left[s];
+        npInputBufferR[npWritePos] = right[s];
+        npWritePos++;
+
+        if (npWritePos >= npFftSize)
+        {
+            npWritePos = 0;
+            npReady = true;
+
+            std::vector<std::complex<float>> fftL(npFftSize);
+            for (int i = 0; i < npFftSize; ++i)
+                fftL[i] = std::complex<float>(npInputBufferL[i] * windowCoeffs[i], 0.0f);
+            fftInPlace(fftL.data(), npFftSize, false);
+            
+            // Apply allpass phase correction: conjugate of minimum phase response for phase-only
+            for (int i = 0; i < npFftSize; ++i)
+            {
+                float mag = std::abs(fftL[i]);
+                if (mag > 1e-10f)
+                {
+                    // Allpass: keep magnitude, modify phase
+                    float targetMag = mag;
+                    // Partial phase correction (50% for Natural Phase)
+                    std::complex<float> eqResp = eqResponse[i];
+                    float eqPhase = std::arg(eqResp);
+                    fftL[i] = std::complex<float>(targetMag * std::cos(eqPhase * 0.5f), 
+                                                  targetMag * std::sin(eqPhase * 0.5f));
+                }
+            }
+            
+            fftInPlace(fftL.data(), npFftSize, true);
+            for (int i = 0; i < npFftHalf; ++i)
+            {
+                float sample = fftL[i].real() * windowCoeffs[i] + npOverlapL[i];
+                npOverlapL[i] = fftL[i + npFftHalf].real() * windowCoeffs[i + npFftHalf];
+                npInputBufferL[i] = sample;
+            }
+
+            std::vector<std::complex<float>> fftR(npFftSize);
+            for (int i = 0; i < npFftSize; ++i)
+                fftR[i] = std::complex<float>(npInputBufferR[i] * windowCoeffs[i], 0.0f);
+            fftInPlace(fftR.data(), npFftSize, false);
+            
+            for (int i = 0; i < npFftSize; ++i)
+            {
+                float mag = std::abs(fftR[i]);
+                if (mag > 1e-10f)
+                {
+                    float targetMag = mag;
+                    std::complex<float> eqResp = eqResponse[i];
+                    float eqPhase = std::arg(eqResp);
+                    fftR[i] = std::complex<float>(targetMag * std::cos(eqPhase * 0.5f), 
+                                                  targetMag * std::sin(eqPhase * 0.5f));
+                }
+            }
+            
+            fftInPlace(fftR.data(), npFftSize, true);
+            for (int i = 0; i < npFftHalf; ++i)
+            {
+                float sample = fftR[i].real() * windowCoeffs[i] + npOverlapR[i];
+                npOverlapR[i] = fftR[i + npFftHalf].real() * windowCoeffs[i + npFftHalf];
+                npInputBufferR[i] = sample;
+            }
+        }
+    }
+
+    int avail = npReady ? npFftHalf : npWritePos;
+    int toRead = std::min(numSamples, avail);
+
+    for (int s = 0; s < toRead; ++s)
+    {
+        left[s] = npInputBufferL[s];
+        right[s] = npInputBufferR[s];
+    }
+
+    if (numSamples > avail)
+    {
+        // Fallback for remaining samples - use minimum phase
         for (int i = 0; i < MAX_BANDS; ++i)
         {
             if (!bands[i].active || bands[i].bypassed) continue;

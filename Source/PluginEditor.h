@@ -69,6 +69,7 @@ private:
     juce::TextButton savePresetBtn{"Save"};
     juce::ComboBox procModeBox;
     juce::ComboBox lpResolutionBox;
+    juce::ComboBox npResolutionBox;
     juce::ComboBox analyzerMode;
     juce::ComboBox displayRangeBox;
     juce::ToggleButton freezeBtn{"F"};

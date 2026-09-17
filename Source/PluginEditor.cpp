@@ -8,6 +8,7 @@ static const juce::StringArray filterTypeNames = {
 static const juce::StringArray channelModeNames = {"Stereo", "Left", "Right", "Mid", "Side"};
 static const juce::StringArray procModeNames = {"Zero Latency", "Natural Phase", "Linear Phase"};
 static const juce::StringArray lpResolutionNames = {"Low (1024)", "Medium (2048)", "High (4096)", "Very High (8192)"};
+static const juce::StringArray npResolutionNames = {"Low (1024)", "Medium (2048)", "High (4096)", "Very High (8192)"};
 static const juce::StringArray displayRangeNames = {"3 dB", "6 dB", "12 dB", "30 dB"};
 static const juce::StringArray analyzerNames = {"Pre", "Post", "Off"};
 
@@ -76,6 +77,14 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     lpResolutionBox.setColour(juce::ComboBox::textColourId, juce::Colour(0xFFe0e0ff));
     addAndMakeVisible(lpResolutionBox);
     lpResolutionBox.addListener(this);
+
+    for (const auto& name : npResolutionNames)
+        npResolutionBox.addItem(name, npResolutionBox.getNumItems() + 1);
+    npResolutionBox.setSelectedId(3); // High (4096) default
+    npResolutionBox.setColour(juce::ComboBox::backgroundColourId, juce::Colour(0xFF16213e));
+    npResolutionBox.setColour(juce::ComboBox::textColourId, juce::Colour(0xFFe0e0ff));
+    addAndMakeVisible(npResolutionBox);
+    npResolutionBox.addListener(this);
 
     for (const auto& name : displayRangeNames)
         displayRangeBox.addItem(name, displayRangeBox.getNumItems() + 1);
@@ -1001,6 +1010,10 @@ void EeqEditor::comboBoxChanged(juce::ComboBox* box)
     {
         processor.setLinearPhaseResolution((LinearPhaseResolution)(lpResolutionBox.getSelectedId() - 1));
     }
+    else if (box == &npResolutionBox)
+    {
+        processor.setNaturalPhaseResolution((NaturalPhaseResolution)(npResolutionBox.getSelectedId() - 1));
+    }
     else if (box == &displayRangeBox)
     {
         float ranges[] = {3.0f, 6.0f, 12.0f, 30.0f};
@@ -1565,6 +1578,8 @@ void EeqEditor::resized()
     x += 108;
     lpResolutionBox.setBounds(x, topBar.getY() + 6, 110, 24);
     x += 118;
+    npResolutionBox.setBounds(x, topBar.getY() + 6, 110, 24);
+    x += 118;
     displayRangeBox.setBounds(x, topBar.getY() + 6, 60, 24);
     x += 68;
     analyzerMode.setBounds(x, topBar.getY() + 6, 72, 24);
@@ -1646,6 +1661,7 @@ void EeqEditor::resized()
     savePresetBtn.toFront(true);
     procModeBox.toFront(true);
     lpResolutionBox.toFront(true);
+    npResolutionBox.toFront(true);
     displayRangeBox.toFront(true);
     analyzerMode.toFront(true);
     freqSlider.toFront(true);

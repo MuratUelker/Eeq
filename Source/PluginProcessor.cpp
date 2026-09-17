@@ -74,6 +74,9 @@ juce::AudioProcessorValueTreeState::ParameterLayout EeqProcessor::createLayout()
         juce::ParameterID{"lpResolution", 1}, "Linear Phase Resolution",
         juce::StringArray{"Low (1024)", "Medium (2048)", "High (4096)", "Very High (8192)"}, 2));
     layout.add(std::make_unique<juce::AudioParameterChoice>(
+        juce::ParameterID{"npResolution", 1}, "Natural Phase Resolution",
+        juce::StringArray{"Low (1024)", "Medium (2048)", "High (4096)", "Very High (8192)"}, 2));
+    layout.add(std::make_unique<juce::AudioParameterChoice>(
         juce::ParameterID{"displayRange", 1}, "Display Range",
         juce::StringArray{"3 dB", "6 dB", "12 dB", "30 dB"}, 3));
 
@@ -100,6 +103,7 @@ void EeqProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
     currentSampleRate = sampleRate;
     equalizer.setProcessingMode(currentMode);
     equalizer.setLinearPhaseResolution(lpResolution);
+    equalizer.setNaturalPhaseResolution(npResolution);
     equalizer.prepare(sampleRate, samplesPerBlock);
     spectrum.prepare(sampleRate);
     sidechainSpectrum.prepare(sampleRate);
@@ -114,7 +118,7 @@ int EeqProcessor::getLatencySamples() const
     if (currentMode == ProcessingMode::LinearPhase)
         return static_cast<int>(lpResolution) / 2;
     if (currentMode == ProcessingMode::NaturalPhase)
-        return 64;
+        return static_cast<int>(npResolution) / 2;
     return 0;
 }
 
@@ -212,6 +216,14 @@ void EeqProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuff
         equalizer.setLinearPhaseResolution(lpResolution);
     }
 
+    // Check for natural phase resolution change
+    NaturalPhaseResolution newNPResolution = (NaturalPhaseResolution)(int)apvts.getRawParameterValue("npResolution")->load();
+    if (newNPResolution != npResolution)
+    {
+        npResolution = newNPResolution;
+        equalizer.setNaturalPhaseResolution(npResolution);
+    }
+
     // Check for display range change
     float newDisplayRange = apvts.getRawParameterValue("displayRange")->load();
     if (std::abs(newDisplayRange - displayRange) > 0.01f)
@@ -228,6 +240,8 @@ void EeqProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuff
 
         if (currentMode == ProcessingMode::LinearPhase)
             equalizer.processLinearPhase(left, right, numSamples);
+        else if (currentMode == ProcessingMode::NaturalPhase)
+            equalizer.processNaturalPhase(left, right, numSamples);
         else
             equalizer.process(left, right, numSamples);
 
@@ -393,6 +407,7 @@ void EeqProcessor::getStateInformation(juce::MemoryBlock& destData)
     state.setProperty("outputPan", outputPan, nullptr);
     state.setProperty("procMode", (int)currentMode, nullptr);
     state.setProperty("lpResolution", (int)lpResolution, nullptr);
+    state.setProperty("npResolution", (int)npResolution, nullptr);
     state.setProperty("displayRange", displayRange, nullptr);
     std::unique_ptr<juce::XmlElement> xml(state.createXml());
     copyXmlToBinary(*xml, destData);
@@ -411,7 +426,9 @@ void EeqProcessor::setStateInformation(const void* data, int sizeInBytes)
         outputPan = state.getProperty("outputPan", 0.0f);
         currentMode = (ProcessingMode)(int)state.getProperty("procMode", 0);
         lpResolution = (LinearPhaseResolution)(int)state.getProperty("lpResolution", (int)LinearPhaseResolution::High);
+        npResolution = (NaturalPhaseResolution)(int)state.getProperty("npResolution", (int)NaturalPhaseResolution::High);
         equalizer.setLinearPhaseResolution(lpResolution);
+        equalizer.setNaturalPhaseResolution(npResolution);
     }
 }
 
@@ -640,6 +657,7 @@ void EeqProcessor::saveUserPreset(const juce::String& name)
     state.setProperty("outputPan", outputPan, nullptr);
     state.setProperty("procMode", (int)currentMode, nullptr);
     state.setProperty("lpResolution", (int)lpResolution, nullptr);
+    state.setProperty("npResolution", (int)npResolution, nullptr);
     state.setProperty("displayRange", displayRange, nullptr);
 
     std::unique_ptr<juce::XmlElement> xml(state.createXml());
@@ -686,9 +704,11 @@ void EeqProcessor::loadUserPreset(const juce::String& name)
         outputPan = state.getProperty("outputPan", 0.0f);
         currentMode = (ProcessingMode)(int)state.getProperty("procMode", 0);
         lpResolution = (LinearPhaseResolution)(int)state.getProperty("lpResolution", (int)LinearPhaseResolution::High);
+        npResolution = (NaturalPhaseResolution)(int)state.getProperty("npResolution", (int)NaturalPhaseResolution::High);
         displayRange = state.getProperty("displayRange", 30.0f);
         equalizer.setProcessingMode(currentMode);
         equalizer.setLinearPhaseResolution(lpResolution);
+        equalizer.setNaturalPhaseResolution(npResolution);
     }
 }
 
