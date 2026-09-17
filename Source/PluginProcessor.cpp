@@ -44,6 +44,10 @@ juce::AudioProcessorValueTreeState::ParameterLayout EeqProcessor::createLayout()
             juce::NormalisableRange<float>(-60.0f, 0.0f, 0.1f), -20.0f));
         layout.add(std::make_unique<juce::AudioParameterBool>(
             juce::ParameterID{"b" + id + "_dynAuto", 1}, "Band " + id + " Auto Threshold", true));
+        layout.add(std::make_unique<juce::AudioParameterBool>(
+            juce::ParameterID{"b" + id + "_dynAutoAtk", 1}, "Band " + id + " Auto Attack", true));
+        layout.add(std::make_unique<juce::AudioParameterBool>(
+            juce::ParameterID{"b" + id + "_dynAutoRel", 1}, "Band " + id + " Auto Release", true));
         layout.add(std::make_unique<juce::AudioParameterChoice>(
             juce::ParameterID{"b" + id + "_slope", 1}, "Band " + id + " Slope",
             juce::StringArray{"6 dB", "12 dB", "18 dB", "24 dB", "30 dB", "36 dB", "42 dB", "48 dB", "96 dB", "Brickwall"}, 3));
@@ -171,6 +175,8 @@ void EeqProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuff
         state.dynamic.dynamicRange = apvts.getRawParameterValue("b" + id + "_dynRange")->load();
         state.dynamic.threshold = apvts.getRawParameterValue("b" + id + "_dynThresh")->load();
         state.dynamic.autoThreshold = apvts.getRawParameterValue("b" + id + "_dynAuto")->load() > 0.5f;
+        state.dynamic.autoAttack = apvts.getRawParameterValue("b" + id + "_dynAutoAtk")->load() > 0.5f;
+        state.dynamic.autoRelease = apvts.getRawParameterValue("b" + id + "_dynAutoRel")->load() > 0.5f;
         state.scTrigger = apvts.getRawParameterValue("b" + id + "_sc")->load() > 0.5f;
         state.phaseInverted = apvts.getRawParameterValue("b" + id + "_phase")->load() > 0.5f;
         int slopeIdx = (int)apvts.getRawParameterValue("b" + id + "_slope")->load();

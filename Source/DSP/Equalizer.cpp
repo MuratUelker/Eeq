@@ -43,8 +43,33 @@ void Equalizer::processDynamicEQ(int bandIdx, float& gain, float inputLevel)
     if (!dyn.enabled) return;
 
     float threshold = dyn.autoThreshold ? -20.0f : dyn.threshold;
-    float attack = 1.0f - std::exp(-1.0f / (currentSampleRate * dyn.attackMs / 1000.0f));
-    float release = 1.0f - std::exp(-1.0f / (currentSampleRate * dyn.releaseMs / 1000.0f));
+
+    // Program-dependent attack/release based on frequency and dynamic range
+    float attackMs, releaseMs;
+    if (dyn.autoAttack)
+    {
+        // Lower frequencies = slower attack, higher dynamic range = faster attack
+        float freq = bands[bandIdx].freq;
+        float freqFactor = std::log10(freq / 20.0f) / std::log10(22000.0f / 20.0f); // 0-1
+        attackMs = 1.0f + freqFactor * 50.0f; // 1-51ms
+        attackMs *= (1.0f + std::abs(dyn.dynamicRange) / 30.0f * 2.0f); // Scale with range
+    }
+    else
+        attackMs = dyn.attackMs;
+
+    if (dyn.autoRelease)
+    {
+        // Lower frequencies = slower release
+        float freq = bands[bandIdx].freq;
+        float freqFactor = std::log10(freq / 20.0f) / std::log10(22000.0f / 20.0f); // 0-1
+        releaseMs = 50.0f + freqFactor * 500.0f; // 50-550ms
+        releaseMs *= (1.0f + std::abs(dyn.dynamicRange) / 30.0f); // Scale with range
+    }
+    else
+        releaseMs = dyn.releaseMs;
+
+    float attack = 1.0f - std::exp(-1.0f / (currentSampleRate * attackMs / 1000.0f));
+    float release = 1.0f - std::exp(-1.0f / (currentSampleRate * releaseMs / 1000.0f));
 
     float levelDB = 20.0f * std::log10(std::max(inputLevel, 1e-10f));
 

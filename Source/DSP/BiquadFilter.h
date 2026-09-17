@@ -69,6 +69,8 @@ struct DynamicState
     float dynamicRange = 0.0f;
     float threshold = -20.0f;
     bool autoThreshold = true;
+    bool autoAttack = true;
+    bool autoRelease = true;
     float envelope = 0.0f;
     float attackMs = 10.0f;
     float releaseMs = 100.0f;
