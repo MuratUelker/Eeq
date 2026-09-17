@@ -16,20 +16,68 @@ const juce::StringArray EeqEditor::slopeNames = {"6 dB", "12 dB", "18 dB", "24 d
 
 static const juce::StringArray factoryPresetNames = {
     "Init", "Vocal Presence", "De-Esser", "Guitar Bright", "Bass Tight",
-    "Drum Smash", "Master Bright", "Master Warm", "Low Pass 8k", "High Pass 80"
+    "Drum Smash", "Master Bright", "Master Warm", "Low Pass 8k", "High Pass 80",
+    "Vocal Air", "Vocal Body", "Vocal Clarity", "Male Vocal", "Female Vocal",
+    "Acoustic Guitar", "Electric Guitar Rhythm", "Electric Guitar Lead", "Bass Guitar", "Kick Drum",
+    "Snare Drum", "Overheads", "Room Mic", "Piano Bright", "Piano Warm",
+    "Synth Pad", "Synth Lead", "Synth Bass", "Strings", "Brass",
+    "Low End Cleanup", "Mid Scoop", "Presence Boost", "Air Band", "Tilt EQ",
+    "Telephone Effect", "Radio Voice", "Lo-Fi", "Vintage Warmth", "Modern Polish",
+    "Mastering Gentle", "Mastering Punch", "Mastering Air", "Corrective Cut", "Problem Frequency",
+    "Side Chain Duck", "Parallel EQ", "M/S Width", "M/S Focus", "Linear Phase Master"
 };
 
 static const std::vector<std::vector<float>> factoryPresets = {
-    {1000, 0, 0.707f, 0, false},
-    {3000, 4, 1.5f, 0, true},
-    {6000, -6, 3.0f, 0, true},
-    {2000, 3, 1.0f, 1, true},
-    {100, 3, 0.8f, 1, true},
-    {4000, 3, 0.5f, 0, true},
-    {10000, 2, 0.7f, 1, true},
-    {200, 2, 0.8f, 1, true},
-    {8000, -80, 0.7f, 4, true},
-    {80, -80, 0.7f, 3, true},
+    {1000, 0, 0.707f, 0, false},           // Init
+    {3000, 4, 1.5f, 0, true},              // Vocal Presence
+    {6000, -6, 3.0f, 0, true},             // De-Esser
+    {2000, 3, 1.0f, 1, true},              // Guitar Bright
+    {100, 3, 0.8f, 1, true},               // Bass Tight
+    {4000, 3, 0.5f, 0, true},              // Drum Smash
+    {10000, 2, 0.7f, 1, true},             // Master Bright
+    {200, 2, 0.8f, 1, true},               // Master Warm
+    {8000, -80, 0.7f, 4, true},            // Low Pass 8k
+    {80, -80, 0.7f, 3, true},              // High Pass 80
+    {12000, 3, 1.0f, 1, true},             // Vocal Air
+    {200, 2, 1.2f, 1, true},               // Vocal Body
+    {4000, 4, 2.0f, 0, true},              // Vocal Clarity
+    {150, 3, 1.0f, 1, true},               // Male Vocal
+    {300, 4, 1.5f, 1, true},               // Female Vocal
+    {80, -3, 0.7f, 3, true},               // Acoustic Guitar
+    {3000, 2, 1.5f, 0, true},              // Electric Guitar Rhythm
+    {2500, 6, 2.5f, 0, true},              // Electric Guitar Lead
+    {60, 4, 1.2f, 1, true},                // Bass Guitar
+    {60, 6, 2.0f, 0, true},                // Kick Drum
+    {200, 3, 1.5f, 1, true},               // Snare Drum
+    {10000, 2, 1.0f, 1, true},             // Overheads
+    {5000, 2, 1.0f, 1, true},              // Room Mic
+    {5000, 3, 1.5f, 1, true},              // Piano Bright
+    {3000, 2, 1.2f, 1, true},              // Piano Warm
+    {10000, 2, 0.8f, 1, true},             // Synth Pad
+    {3000, 4, 2.0f, 0, true},              // Synth Lead
+    {80, 4, 1.5f, 1, true},                // Synth Bass
+    {12000, 3, 1.2f, 1, true},             // Strings
+    {5000, 2, 1.0f, 1, true},              // Brass
+    {40, -6, 0.7f, 3, true},               // Low End Cleanup
+    {500, -4, 1.5f, 1, true},              // Mid Scoop
+    {8000, 3, 1.5f, 1, true},              // Presence Boost
+    {16000, 2, 0.7f, 1, true},             // Air Band
+    {1000, -2, 1.0f, 5, true},             // Tilt EQ
+    {800, -80, 0.7f, 3, true},             // Telephone Effect
+    {1000, 2, 2.0f, 0, true},              // Radio Voice
+    {2000, -6, 3.0f, 0, true},             // Lo-Fi
+    {200, 2, 0.8f, 1, true},               // Vintage Warmth
+    {10000, 1, 0.7f, 1, true},             // Modern Polish
+    {10000, 1, 1.0f, 1, true},             // Mastering Gentle
+    {60, 2, 1.0f, 1, true},                // Mastering Punch
+    {15000, 2, 0.7f, 1, true},             // Mastering Air
+    {2500, -4, 4.0f, 0, true},             // Corrective Cut
+    {1500, -8, 5.0f, 0, true},             // Problem Frequency
+    {80, -6, 2.0f, 0, true},               // Side Chain Duck
+    {500, 3, 1.0f, 2, true},               // Parallel EQ
+    {8000, 2, 1.5f, 2, true},              // M/S Width
+    {3000, 3, 2.0f, 4, true},              // M/S Focus
+    {10000, 1, 1.0f, 1, true},             // Linear Phase Master
 };
 
 static juce::Font makeFont(float size)
