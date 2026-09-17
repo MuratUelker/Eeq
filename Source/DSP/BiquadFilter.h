@@ -22,7 +22,18 @@ enum class ChannelMode
     Left,
     Right,
     Mid,
-    Side
+    Side,
+    // Surround channels
+    LFE,
+    Center,
+    LeftSurround,
+    RightSurround,
+    LeftRearSurround,
+    RightRearSurround,
+    TopFrontLeft,
+    TopFrontRight,
+    TopRearLeft,
+    TopRearRight
 };
 
 struct BiquadCoeffs

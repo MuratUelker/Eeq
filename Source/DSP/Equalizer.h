@@ -37,6 +37,7 @@ public:
 
     void prepare(double sampleRate, int samplesPerBlock);
     void process(float* left, float* right, int numSamples);
+    void processMultiChannel(float** channels, int numChannels, int numSamples);
     void processLinearPhase(float* left, float* right, int numSamples);
     void setBand(int index, const BandState& state);
     const BandState& getBand(int index) const { return bands[index]; }

@@ -137,6 +137,101 @@ static void processChannelWithStages(BiquadFilter* stages, int numStages,
         stages[s].processLeft(ch, numSamples);
 }
 
+void Equalizer::processMultiChannel(float** channels, int numChannels, int numSamples)
+{
+    // Smooth parameter interpolation
+    float smoothingFactor = 1.0f - std::exp(-1.0f / (currentSampleRate * smoothingTimeMs / 1000.0f));
+    for (int i = 0; i < MAX_BANDS; ++i)
+    {
+        if (bands[i].active != targetBands[i].active)
+            bands[i].active = targetBands[i].active;
+        
+        if (bands[i].active)
+        {
+            // Interpolate freq, gain, q
+            bands[i].freq += (targetBands[i].freq - bands[i].freq) * smoothingFactor;
+            bands[i].gain += (targetBands[i].gain - bands[i].gain) * smoothingFactor;
+            bands[i].q += (targetBands[i].q - bands[i].q) * smoothingFactor;
+        }
+    }
+
+    bool hasSolo = false;
+    for (int i = 0; i < MAX_BANDS; ++i)
+        if (bands[i].soloed) { hasSolo = true; break; }
+
+    for (int i = 0; i < MAX_BANDS; ++i)
+    {
+        if (!bands[i].active || bands[i].bypassed) continue;
+        if (hasSolo && !bands[i].soloed) continue;
+
+        float effectiveGain = bands[i].gain * gainScale;
+
+        if (bands[i].dynamic.enabled)
+        {
+            float inputLevel = 0.0f;
+            // Use first two channels for dynamic detection if available
+            if (numChannels >= 2 && bands[i].scTrigger && scLevelL > 0.0f)
+            {
+                inputLevel = 0.5f * (scLevelL + scLevelR);
+            }
+            else if (numChannels >= 1)
+            {
+                for (int s = 0; s < numSamples; ++s)
+                    inputLevel += channels[0][s] * channels[0][s];
+                inputLevel = std::sqrt(inputLevel / (float)numSamples);
+            }
+            processDynamicEQ(i, effectiveGain, inputLevel);
+        }
+
+        bool isCutFilter = (bands[i].type == FilterType::LowCut || bands[i].type == FilterType::HighCut);
+        int numStages = isCutFilter ? slopeToStages(bands[i].slope) : 1;
+
+        for (int s = 0; s < numStages; ++s)
+        {
+            // Update filter coefficients for this band
+            filterStages[i][s].setParams(bands[i].freq, effectiveGain, bands[i].q, bands[i].type);
+        }
+
+        // Process each channel based on channel mode
+        for (int ch = 0; ch < numChannels; ++ch)
+        {
+            float* channelData = channels[ch];
+            
+            switch (bands[i].channelMode)
+            {
+            case ChannelMode::Stereo:
+            case ChannelMode::Left:
+            case ChannelMode::Right:
+            case ChannelMode::Mid:
+            case ChannelMode::Side:
+            case ChannelMode::LFE:
+            case ChannelMode::Center:
+            case ChannelMode::LeftSurround:
+            case ChannelMode::RightSurround:
+            case ChannelMode::LeftRearSurround:
+            case ChannelMode::RightRearSurround:
+            case ChannelMode::TopFrontLeft:
+            case ChannelMode::TopFrontRight:
+            case ChannelMode::TopRearLeft:
+            case ChannelMode::TopRearRight:
+                for (int s = 0; s < numStages; ++s)
+                    filterStages[i][s].processLeft(channelData, numSamples);
+                break;
+            }
+        }
+
+        // Apply phase inversion if enabled
+        if (bands[i].phaseInverted)
+        {
+            for (int ch = 0; ch < numChannels; ++ch)
+            {
+                for (int s = 0; s < numSamples; ++s)
+                    channels[ch][s] = -channels[ch][s];
+            }
+        }
+    }
+}
+
 void Equalizer::process(float* left, float* right, int numSamples)
 {
     // Smooth parameter interpolation

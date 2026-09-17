@@ -87,7 +87,11 @@ EeqProcessor::EeqProcessor()
     : AudioProcessor(BusesProperties()
           .withInput("Input", juce::AudioChannelSet::stereo(), true)
           .withOutput("Output", juce::AudioChannelSet::stereo(), true)
-          .withInput("Sidechain", juce::AudioChannelSet::stereo(), true)),
+          .withInput("Sidechain", juce::AudioChannelSet::stereo(), true)
+          .withInput("Input_51", juce::AudioChannelSet::create5point1(), true)
+          .withOutput("Output_51", juce::AudioChannelSet::create5point1(), true)
+          .withInput("Input_71", juce::AudioChannelSet::create7point1(), true)
+          .withOutput("Output_71", juce::AudioChannelSet::create7point1(), true)),
       apvts(*this, nullptr, juce::Identifier("EeqState"), createLayout())
 {
     loadStateFromFile();
@@ -235,57 +239,94 @@ void EeqProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuff
 
     if (numChannels >= 2)
     {
-        auto* left = buffer.getWritePointer(0);
-        auto* right = buffer.getWritePointer(1);
-
-        if (currentMode == ProcessingMode::LinearPhase)
-            equalizer.processLinearPhase(left, right, numSamples);
-        else if (currentMode == ProcessingMode::NaturalPhase)
-            equalizer.processNaturalPhase(left, right, numSamples);
-        else
-            equalizer.process(left, right, numSamples);
-
-        // Auto Gain compensation
-        if (autoGainEnabled)
+        // For surround, use multi-channel processing
+        if (numChannels > 2)
         {
-            float eqGain = 0.0f;
-            for (int i = 0; i < MAX_BANDS; ++i)
-                if (equalizer.getBand(i).active)
-                    eqGain += std::abs(equalizer.getBand(i).gain);
-            float compensation = -eqGain / (float)MAX_BANDS * 0.3f;
-            for (int s = 0; s < numSamples; ++s)
+            std::vector<float*> channels(numChannels);
+            for (int ch = 0; ch < numChannels; ++ch)
+                channels[ch] = buffer.getWritePointer(ch);
+
+            if (currentMode == ProcessingMode::LinearPhase)
             {
-                left[s] *= std::pow(10.0f, compensation / 20.0f);
-                right[s] *= std::pow(10.0f, compensation / 20.0f);
+                // Linear phase - process first two channels as stereo, others as mono
+                auto* left = buffer.getWritePointer(0);
+                auto* right = buffer.getWritePointer(1);
+                equalizer.processLinearPhase(left, right, numSamples);
+                // Process remaining channels
+                for (int ch = 2; ch < numChannels; ++ch)
+                {
+                    auto* chData = buffer.getWritePointer(ch);
+                    // Apply same processing to other channels
+                    float* monoChannels[1] = { chData };
+                    equalizer.processMultiChannel(monoChannels, 1, numSamples);
+                }
             }
+            else if (currentMode == ProcessingMode::NaturalPhase)
+            {
+                auto* left = buffer.getWritePointer(0);
+                auto* right = buffer.getWritePointer(1);
+                equalizer.processNaturalPhase(left, right, numSamples);
+                for (int ch = 2; ch < numChannels; ++ch)
+                {
+                    auto* chData = buffer.getWritePointer(ch);
+                    float* monoChannels[1] = { chData };
+                    equalizer.processMultiChannel(monoChannels, 1, numSamples);
+                }
+            }
+            else
+            {
+                equalizer.processMultiChannel(channels.data(), numChannels, numSamples);
+            }
+
+            // Auto Gain compensation
+            if (autoGainEnabled)
+            {
+                float eqGain = 0.0f;
+                for (int i = 0; i < MAX_BANDS; ++i)
+                    if (equalizer.getBand(i).active)
+                        eqGain += std::abs(equalizer.getBand(i).gain);
+                float compensation = -eqGain / (float)MAX_BANDS * 0.3f;
+                float gain = std::pow(10.0f, compensation / 20.0f);
+                for (int ch = 0; ch < numChannels; ++ch)
+                {
+                    auto* chData = buffer.getWritePointer(ch);
+                    for (int s = 0; s < numSamples; ++s)
+                        chData[s] *= gain;
+                }
+            }
+
+            // Phase invert
+            if (phaseInverted)
+            {
+                for (int ch = 0; ch < numChannels; ++ch)
+                {
+                    auto* chData = buffer.getWritePointer(ch);
+                    for (int s = 0; s < numSamples; ++s)
+                        chData[s] = -chData[s];
+                }
+            }
+
+            // Output pan (stereo only)
+            if (numChannels >= 2 && std::abs(outputPan) > 0.01f)
+            {
+                auto* left = buffer.getWritePointer(0);
+                auto* right = buffer.getWritePointer(1);
+                float leftGain = std::min(1.0f, 1.0f - outputPan);
+                float rightGain = std::min(1.0f, 1.0f + outputPan);
+                for (int s = 0; s < numSamples; ++s)
+                {
+                    left[s] *= leftGain;
+                    right[s] *= rightGain;
+                }
+            }
+
+            spectrum.pushSamples(buffer.getWritePointer(0), numSamples);
         }
 
-        // Phase invert
-        if (phaseInverted)
-        {
-            for (int s = 0; s < numSamples; ++s)
-            {
-                left[s] = -left[s];
-                right[s] = -right[s];
-            }
-        }
-
-        // Output pan
-        if (std::abs(outputPan) > 0.01f)
-        {
-            float leftGain = std::min(1.0f, 1.0f - outputPan);
-            float rightGain = std::min(1.0f, 1.0f + outputPan);
-            for (int s = 0; s < numSamples; ++s)
-            {
-                left[s] *= leftGain;
-                right[s] *= rightGain;
-            }
-        }
-
-        spectrum.pushSamples(left, numSamples);
-
-        // Output meter levels (RMS)
+        // Output meter levels (RMS) for multi-channel
         float sumL = 0.0f, sumR = 0.0f;
+        auto* left = buffer.getWritePointer(0);
+        auto* right = buffer.getNumChannels() > 1 ? buffer.getWritePointer(1) : left;
         for (int s = 0; s < numSamples; ++s)
         {
             sumL += left[s] * left[s];
@@ -293,7 +334,7 @@ void EeqProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuff
         }
         outputLevelL = 20.0f * std::log10(std::sqrt(sumL / (float)numSamples) + 1e-10f);
         outputLevelR = 20.0f * std::log10(std::sqrt(sumR / (float)numSamples) + 1e-10f);
-    }
+        }
 
     // Process sidechain input if available
     if (getTotalNumInputChannels() > 2)
@@ -308,12 +349,11 @@ void EeqProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuff
             scSumL += scLeft[s] * scLeft[s];
             scSumR += scRight[s] * scRight[s];
         }
-        float scRmsL = std::sqrt(scSumL / (float)numSamples);
+float scRmsL = std::sqrt(scSumL / (float)numSamples);
         float scRmsR = std::sqrt(scSumR / (float)numSamples);
         equalizer.setSidechainLevels(scRmsL, scRmsR);
     }
 }
-
 
 EQSnapshot EeqProcessor::captureState()
 {
