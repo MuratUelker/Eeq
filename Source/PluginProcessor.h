@@ -61,6 +61,10 @@ public:
     ProcessingMode getProcessingMode() const { return currentMode; }
     void setProcessingMode(ProcessingMode mode) { currentMode = mode; }
 
+    // Linear Phase Resolution
+    LinearPhaseResolution getLinearPhaseResolution() const { return lpResolution; }
+    void setLinearPhaseResolution(LinearPhaseResolution res) { lpResolution = res; equalizer.setLinearPhaseResolution(res); }
+
     // Phase Invert
     bool isPhaseInverted() const { return phaseInverted; }
     void setPhaseInverted(bool inv) { phaseInverted = inv; }
@@ -121,6 +125,7 @@ private:
 
     double currentSampleRate = 44100.0;
     ProcessingMode currentMode = ProcessingMode::ZeroLatency;
+    LinearPhaseResolution lpResolution = LinearPhaseResolution::High;
     bool phaseInverted = false;
     bool autoGainEnabled = true;
     float outputPan = 0.0f;

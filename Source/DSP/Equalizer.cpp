@@ -2,6 +2,28 @@
 #include <cmath>
 #include <algorithm>
 
+void Equalizer::allocateLinearPhaseBuffers(int size)
+{
+    fftSize = size;
+    fftHalf = size / 2;
+
+    overlapL.assign(fftSize, 0.0f);
+    overlapR.assign(fftSize, 0.0f);
+    inputBufferL.assign(fftSize, 0.0f);
+    inputBufferR.assign(fftSize, 0.0f);
+
+    fftWindow.resize(fftSize);
+    windowCoeffs.resize(fftSize);
+    eqResponse.resize(fftSize);
+
+    for (int i = 0; i < fftSize; ++i)
+        windowCoeffs[i] = 0.5f * (1.0f - std::cos(2.0f * 3.14159265f * (float)i / (float)(fftSize - 1)));
+
+    lpWritePos = 0;
+    lpReady = false;
+    responseDirty = true;
+}
+
 void Equalizer::prepare(double sampleRate, int samplesPerBlock)
 {
     currentSampleRate = sampleRate;
@@ -11,15 +33,8 @@ void Equalizer::prepare(double sampleRate, int samplesPerBlock)
             f.prepare(sampleRate);
     envelope.fill(0.0f);
 
-    for (int i = 0; i < FFT_SIZE; ++i)
-        windowCoeffs[i] = 0.5f * (1.0f - std::cos(2.0f * 3.14159265f * (float)i / (float)(FFT_SIZE - 1)));
-
-    overlapL.fill(0.0f);
-    overlapR.fill(0.0f);
-    inputBufferL.fill(0.0f);
-    inputBufferR.fill(0.0f);
-    lpWritePos = 0;
-    lpReady = false;
+    int fftSize = static_cast<int>(lpResolution);
+    allocateLinearPhaseBuffers(fftSize);
 }
 
 void Equalizer::processDynamicEQ(int bandIdx, float& gain, float inputLevel)
@@ -335,9 +350,9 @@ void Equalizer::processLinearPhase(float* left, float* right, int numSamples)
     if (responseDirty)
     {
         eqResponse[0] = std::complex<float>(1.0f, 0.0f);
-        computeEQFrequencyResponse(eqResponse.data(), FFT_HALF, (float)currentSampleRate);
-        for (int k = 1; k < FFT_HALF; ++k)
-            eqResponse[FFT_SIZE - k] = std::conj(eqResponse[k]);
+        computeEQFrequencyResponse(eqResponse.data(), fftHalf, (float)currentSampleRate);
+        for (int k = 1; k < fftHalf; ++k)
+            eqResponse[fftSize - k] = std::conj(eqResponse[k]);
         responseDirty = false;
     }
 
@@ -347,42 +362,42 @@ void Equalizer::processLinearPhase(float* left, float* right, int numSamples)
         inputBufferR[lpWritePos] = right[s];
         lpWritePos++;
 
-        if (lpWritePos >= FFT_SIZE)
+        if (lpWritePos >= fftSize)
         {
             lpWritePos = 0;
             lpReady = true;
 
-            std::array<std::complex<float>, FFT_SIZE> fftL{};
-            for (int i = 0; i < FFT_SIZE; ++i)
+            std::vector<std::complex<float>> fftL(fftSize);
+            for (int i = 0; i < fftSize; ++i)
                 fftL[i] = std::complex<float>(inputBufferL[i] * windowCoeffs[i], 0.0f);
-            fftInPlace(fftL.data(), FFT_SIZE, false);
-            for (int i = 0; i < FFT_SIZE; ++i)
+            fftInPlace(fftL.data(), fftSize, false);
+            for (int i = 0; i < fftSize; ++i)
                 fftL[i] *= eqResponse[i];
-            fftInPlace(fftL.data(), FFT_SIZE, true);
-            for (int i = 0; i < FFT_HALF; ++i)
+            fftInPlace(fftL.data(), fftSize, true);
+            for (int i = 0; i < fftHalf; ++i)
             {
                 float sample = fftL[i].real() * windowCoeffs[i] + overlapL[i];
-                overlapL[i] = fftL[i + FFT_HALF].real() * windowCoeffs[i + FFT_HALF];
+                overlapL[i] = fftL[i + fftHalf].real() * windowCoeffs[i + fftHalf];
                 inputBufferL[i] = sample;
             }
 
-            std::array<std::complex<float>, FFT_SIZE> fftR{};
-            for (int i = 0; i < FFT_SIZE; ++i)
+            std::vector<std::complex<float>> fftR(fftSize);
+            for (int i = 0; i < fftSize; ++i)
                 fftR[i] = std::complex<float>(inputBufferR[i] * windowCoeffs[i], 0.0f);
-            fftInPlace(fftR.data(), FFT_SIZE, false);
-            for (int i = 0; i < FFT_SIZE; ++i)
+            fftInPlace(fftR.data(), fftSize, false);
+            for (int i = 0; i < fftSize; ++i)
                 fftR[i] *= eqResponse[i];
-            fftInPlace(fftR.data(), FFT_SIZE, true);
-            for (int i = 0; i < FFT_HALF; ++i)
+            fftInPlace(fftR.data(), fftSize, true);
+            for (int i = 0; i < fftHalf; ++i)
             {
                 float sample = fftR[i].real() * windowCoeffs[i] + overlapR[i];
-                overlapR[i] = fftR[i + FFT_HALF].real() * windowCoeffs[i + FFT_HALF];
+                overlapR[i] = fftR[i + fftHalf].real() * windowCoeffs[i + fftHalf];
                 inputBufferR[i] = sample;
             }
         }
     }
 
-    int avail = lpReady ? FFT_HALF : lpWritePos;
+    int avail = lpReady ? fftHalf : lpWritePos;
     int toRead = std::min(numSamples, avail);
 
     for (int s = 0; s < toRead; ++s)

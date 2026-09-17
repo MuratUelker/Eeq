@@ -60,6 +60,14 @@ juce::AudioProcessorValueTreeState::ParameterLayout EeqProcessor::createLayout()
             juce::ParameterID{"b" + id + "_bypass", 1}, "Band " + id + " Bypass", false));
     }
 
+    // Global parameters
+    layout.add(std::make_unique<juce::AudioParameterChoice>(
+        juce::ParameterID{"procMode", 1}, "Processing Mode",
+        juce::StringArray{"Zero Latency", "Natural Phase", "Linear Phase"}, 0));
+    layout.add(std::make_unique<juce::AudioParameterChoice>(
+        juce::ParameterID{"lpResolution", 1}, "Linear Phase Resolution",
+        juce::StringArray{"Low (1024)", "Medium (2048)", "High (4096)", "Very High (8192)"}, 2));
+
     return layout;
 }
 
@@ -81,6 +89,8 @@ EeqProcessor::~EeqProcessor()
 void EeqProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 {
     currentSampleRate = sampleRate;
+    equalizer.setProcessingMode(currentMode);
+    equalizer.setLinearPhaseResolution(lpResolution);
     equalizer.prepare(sampleRate, samplesPerBlock);
     spectrum.prepare(sampleRate);
     sidechainSpectrum.prepare(sampleRate);
@@ -93,7 +103,7 @@ void EeqProcessor::releaseResources() {}
 int EeqProcessor::getLatencySamples() const
 {
     if (currentMode == ProcessingMode::LinearPhase)
-        return 2048;
+        return static_cast<int>(lpResolution) / 2;
     if (currentMode == ProcessingMode::NaturalPhase)
         return 64;
     return 0;
@@ -139,6 +149,23 @@ void EeqProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuff
     }
 
     equalizer.setGainScale(gainScale);
+
+    // Check for processing mode change
+    ProcessingMode newMode = (ProcessingMode)(int)apvts.getRawParameterValue("procMode")->load();
+    if (newMode != currentMode)
+    {
+        currentMode = newMode;
+        equalizer.setProcessingMode(currentMode);
+    }
+
+    // Check for linear phase resolution change
+    LinearPhaseResolution newResolution = (LinearPhaseResolution)(int)apvts.getRawParameterValue("lpResolution")->load();
+    if (newResolution != lpResolution)
+    {
+        lpResolution = newResolution;
+        equalizer.setLinearPhaseResolution(lpResolution);
+    }
+
     equalizer.setProcessingMode(currentMode);
 
     if (numChannels >= 2)
@@ -312,6 +339,7 @@ void EeqProcessor::getStateInformation(juce::MemoryBlock& destData)
     state.setProperty("autoGain", autoGainEnabled, nullptr);
     state.setProperty("outputPan", outputPan, nullptr);
     state.setProperty("procMode", (int)currentMode, nullptr);
+    state.setProperty("lpResolution", (int)lpResolution, nullptr);
     state.setProperty("displayRange", displayRange, nullptr);
     std::unique_ptr<juce::XmlElement> xml(state.createXml());
     copyXmlToBinary(*xml, destData);
@@ -329,6 +357,8 @@ void EeqProcessor::setStateInformation(const void* data, int sizeInBytes)
         autoGainEnabled = state.getProperty("autoGain", true);
         outputPan = state.getProperty("outputPan", 0.0f);
         currentMode = (ProcessingMode)(int)state.getProperty("procMode", 0);
+        lpResolution = (LinearPhaseResolution)(int)state.getProperty("lpResolution", (int)LinearPhaseResolution::High);
+        equalizer.setLinearPhaseResolution(lpResolution);
     }
 }
 

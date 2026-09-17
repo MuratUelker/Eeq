@@ -7,6 +7,7 @@ static const juce::StringArray filterTypeNames = {
 
 static const juce::StringArray channelModeNames = {"Stereo", "Left", "Right", "Mid", "Side"};
 static const juce::StringArray procModeNames = {"Zero Latency", "Natural Phase", "Linear Phase"};
+static const juce::StringArray lpResolutionNames = {"Low (1024)", "Medium (2048)", "High (4096)", "Very High (8192)"};
 static const juce::StringArray analyzerNames = {"Pre", "Post", "Off"};
 
 const juce::StringArray EeqEditor::slopeNames = {"6 dB", "12 dB", "18 dB", "24 dB", "30 dB", "36 dB", "42 dB", "48 dB"};
@@ -67,6 +68,14 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     procModeBox.setColour(juce::ComboBox::textColourId, juce::Colour(0xFFe0e0ff));
     addAndMakeVisible(procModeBox);
     procModeBox.addListener(this);
+
+    for (const auto& name : lpResolutionNames)
+        lpResolutionBox.addItem(name, lpResolutionBox.getNumItems() + 1);
+    lpResolutionBox.setSelectedId(3); // High (4096) default
+    lpResolutionBox.setColour(juce::ComboBox::backgroundColourId, juce::Colour(0xFF16213e));
+    lpResolutionBox.setColour(juce::ComboBox::textColourId, juce::Colour(0xFFe0e0ff));
+    addAndMakeVisible(lpResolutionBox);
+    lpResolutionBox.addListener(this);
 
     for (const auto& name : analyzerNames)
         analyzerMode.addItem(name, analyzerMode.getNumItems() + 1);
@@ -956,6 +965,10 @@ void EeqEditor::comboBoxChanged(juce::ComboBox* box)
     {
         processor.setProcessingMode((ProcessingMode)(procModeBox.getSelectedId() - 1));
     }
+    else if (box == &lpResolutionBox)
+    {
+        processor.setLinearPhaseResolution((LinearPhaseResolution)(lpResolutionBox.getSelectedId() - 1));
+    }
     else if (box == &typeBox || box == &channelModeBox || box == &slopeBox)
     {
         if (selectedBand >= 0)
@@ -1495,6 +1508,8 @@ void EeqEditor::resized()
     x += 180;
     procModeBox.setBounds(x, topBar.getY() + 6, 100, 24);
     x += 108;
+    lpResolutionBox.setBounds(x, topBar.getY() + 6, 110, 24);
+    x += 118;
     analyzerMode.setBounds(x, topBar.getY() + 6, 72, 24);
     x += 80;
     freezeBtn.setBounds(x, topBar.getY() + 6, 24, 24);
@@ -1570,6 +1585,7 @@ void EeqEditor::resized()
     presetSelector.toFront(true);
     savePresetBtn.toFront(true);
     procModeBox.toFront(true);
+    lpResolutionBox.toFront(true);
     analyzerMode.toFront(true);
     freqSlider.toFront(true);
     gainSlider.toFront(true);

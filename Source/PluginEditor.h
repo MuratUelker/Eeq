@@ -67,6 +67,7 @@ private:
     juce::ComboBox presetSelector;
     juce::TextButton savePresetBtn{"Save"};
     juce::ComboBox procModeBox;
+    juce::ComboBox lpResolutionBox;
     juce::ComboBox analyzerMode;
     juce::ToggleButton freezeBtn{"F"};
     juce::ToggleButton abBtn{"A"};
