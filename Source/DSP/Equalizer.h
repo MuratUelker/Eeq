@@ -63,6 +63,8 @@ private:
     // FFT workspace
     std::array<std::complex<float>, FFT_SIZE> fftWindow{};
     std::array<float, FFT_SIZE> windowCoeffs{};
+    std::array<std::complex<float>, FFT_SIZE> eqResponse{};
+    bool responseDirty = true;
 
     void computeEQFrequencyResponse(std::complex<float>* response, int numBins, float sampleRate);
     void fftInPlace(std::complex<float>* data, int n, bool inverse);

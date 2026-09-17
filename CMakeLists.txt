@@ -60,3 +60,18 @@ target_link_libraries(Eeq
         juce::juce_gui_basics
         juce::juce_audio_processors
 )
+
+# DSP Tests (standalone, no GUI)
+add_executable(EeqTests
+    Tests/DSPTest.cpp
+)
+target_link_libraries(EeqTests PRIVATE
+    juce::juce_core
+    juce::juce_dsp
+)
+target_include_directories(EeqTests PRIVATE Source)
+target_sources(EeqTests PRIVATE
+    Source/DSP/BiquadFilter.cpp
+    Source/DSP/Equalizer.cpp
+    Source/DSP/SpectrumAnalyzer.cpp
+)

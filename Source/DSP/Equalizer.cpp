@@ -50,6 +50,7 @@ void Equalizer::setBand(int index, const BandState& state)
 {
     if (index < 0 || index >= MAX_BANDS) return;
     bands[index] = state;
+    responseDirty = true;
     if (state.active)
     {
         float scaledGain = state.gain * gainScale;
@@ -60,7 +61,7 @@ void Equalizer::setBand(int index, const BandState& state)
             filterStages[index][s].setParams(state.freq, scaledGain, state.q, state.type);
 
         for (int s = numStages; s < MAX_FILTERS_PER_BAND; ++s)
-            filterStages[index][s].setParams(state.freq, 0.0f, state.q, FilterType::Bell);
+            filterStages[index][s].reset();
     }
 }
 
@@ -331,13 +332,14 @@ void Equalizer::processLinearPhase(float* left, float* right, int numSamples)
 {
     if (numSamples <= 0) return;
 
-    static std::array<std::complex<float>, FFT_SIZE> eqResponse{};
-
-    eqResponse[0] = std::complex<float>(1.0f, 0.0f);
-    computeEQFrequencyResponse(eqResponse.data(), FFT_HALF, (float)currentSampleRate);
-
-    for (int k = 1; k < FFT_HALF; ++k)
-        eqResponse[FFT_SIZE - k] = std::conj(eqResponse[k]);
+    if (responseDirty)
+    {
+        eqResponse[0] = std::complex<float>(1.0f, 0.0f);
+        computeEQFrequencyResponse(eqResponse.data(), FFT_HALF, (float)currentSampleRate);
+        for (int k = 1; k < FFT_HALF; ++k)
+            eqResponse[FFT_SIZE - k] = std::conj(eqResponse[k]);
+        responseDirty = false;
+    }
 
     for (int s = 0; s < numSamples; ++s)
     {

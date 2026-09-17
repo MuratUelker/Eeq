@@ -75,18 +75,19 @@ float BiquadFilter::getMagnitude(float freq) const
     float cosw = std::cos(w);
     float sinw = std::sin(w);
     float cos2w = std::cos(2.0f * w);
+    float sin2w = std::sin(2.0f * w);
 
-    float numMag = std::sqrt(
-        current.b0 * current.b0 + current.b1 * current.b1 + current.b2 * current.b2
-        + 2.0f * (current.b0 * current.b1 + current.b1 * current.b2) * cosw
-        + 2.0f * current.b0 * current.b2 * cos2w);
+    float numR = current.b0 + current.b1 * cosw + current.b2 * cos2w;
+    float numI = -(current.b1 * sinw + current.b2 * sin2w);
+    float numMag2 = numR * numR + numI * numI;
 
-    float denMag = std::sqrt(
-        1.0f + current.a1 * current.a1 + current.a2 * current.a2
-        + 2.0f * (current.a1 + current.a1 * current.a2) * cosw
-        + 2.0f * current.a2 * cos2w);
+    float denR = 1.0f + current.a1 * cosw + current.a2 * cos2w;
+    float denI = -(current.a1 * sinw + current.a2 * sin2w);
+    float denMag2 = denR * denR + denI * denI;
 
-    return (denMag > 1e-10f) ? (numMag / denMag) : numMag;
+    if (denMag2 < 1e-20f) denMag2 = 1e-20f;
+
+    return std::sqrt(numMag2 / denMag2);
 }
 
 void BiquadFilter::calcCoefficients()
@@ -135,13 +136,15 @@ void BiquadFilter::calcCoefficients()
     }
     case FilterType::LowCut:
     {
-        b0 = (1.0f - cosw) * 0.5f; b1 = 1.0f - cosw; b2 = (1.0f - cosw) * 0.5f;
+        // HighPass (cuts lows, passes highs)
+        b0 = (1.0f + cosw) * 0.5f; b1 = -(1.0f + cosw); b2 = (1.0f + cosw) * 0.5f;
         a0 = 1.0f + alpha; a1 = -2.0f * cosw; a2 = 1.0f - alpha;
         break;
     }
     case FilterType::HighCut:
     {
-        b0 = (1.0f + cosw) * 0.5f; b1 = -(1.0f + cosw); b2 = (1.0f + cosw) * 0.5f;
+        // LowPass (cuts highs, passes lows)
+        b0 = (1.0f - cosw) * 0.5f; b1 = 1.0f - cosw; b2 = (1.0f - cosw) * 0.5f;
         a0 = 1.0f + alpha; a1 = -2.0f * cosw; a2 = 1.0f - alpha;
         break;
     }
