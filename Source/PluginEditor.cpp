@@ -472,6 +472,7 @@ void EeqEditor::selectBand(int idx)
     {
         bandVisuals[idx].selected = true;
         updateControlsFromBand(idx);
+        resized();
     }
 }
 
@@ -818,6 +819,7 @@ void EeqEditor::mouseDrag(const juce::MouseEvent& e)
     if (spectrumGrabbing && selectedBand >= 0)
     {
         updateBandFromMouse(selectedBand, e.position.x, e.position.y);
+        resized();
         return;
     }
 
@@ -833,6 +835,8 @@ void EeqEditor::mouseDrag(const juce::MouseEvent& e)
                     updateBandFromMouse(b, e.position.x, e.position.y);
             }
         }
+
+        resized();
     }
 }
 
