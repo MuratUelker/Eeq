@@ -142,6 +142,8 @@ private:
 
     EQSnapshot captureState();
     void applyState(const EQSnapshot& state);
+    void saveStateToFile();
+    void loadStateFromFile();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(EeqProcessor)
 };

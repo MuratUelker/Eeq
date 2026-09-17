@@ -70,9 +70,13 @@ EeqProcessor::EeqProcessor()
           .withInput("Sidechain", juce::AudioChannelSet::stereo(), true)),
       apvts(*this, nullptr, juce::Identifier("EeqState"), createLayout())
 {
+    loadStateFromFile();
 }
 
-EeqProcessor::~EeqProcessor() {}
+EeqProcessor::~EeqProcessor()
+{
+    saveStateToFile();
+}
 
 void EeqProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 {
@@ -308,6 +312,7 @@ void EeqProcessor::getStateInformation(juce::MemoryBlock& destData)
     state.setProperty("autoGain", autoGainEnabled, nullptr);
     state.setProperty("outputPan", outputPan, nullptr);
     state.setProperty("procMode", (int)currentMode, nullptr);
+    state.setProperty("displayRange", displayRange, nullptr);
     std::unique_ptr<juce::XmlElement> xml(state.createXml());
     copyXmlToBinary(*xml, destData);
 }
@@ -407,6 +412,46 @@ void EeqProcessor::applyEQMatch()
         apvts.getParameter("b" + id + "_active")->setValueNotifyingHost(1.0f);
 
         bandIdx++;
+    }
+}
+
+static juce::File getStateFile()
+{
+    return juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
+        .getChildFile("Eeq").getChildFile("EeqState.xml");
+}
+
+void EeqProcessor::saveStateToFile()
+{
+    auto state = apvts.copyState();
+    state.setProperty("gainScale", gainScale, nullptr);
+    state.setProperty("phaseInverted", phaseInverted, nullptr);
+    state.setProperty("autoGain", autoGainEnabled, nullptr);
+    state.setProperty("outputPan", outputPan, nullptr);
+    state.setProperty("procMode", (int)currentMode, nullptr);
+    state.setProperty("displayRange", displayRange, nullptr);
+    std::unique_ptr<juce::XmlElement> xml(state.createXml());
+    auto file = getStateFile();
+    file.createDirectory();
+    xml->writeTo(file);
+}
+
+void EeqProcessor::loadStateFromFile()
+{
+    auto file = getStateFile();
+    if (!file.existsAsFile()) return;
+
+    std::unique_ptr<juce::XmlElement> xml(juce::XmlDocument::parse(file));
+    if (xml && xml->hasTagName(apvts.state.getType()))
+    {
+        auto state = juce::ValueTree::fromXml(*xml);
+        apvts.replaceState(state);
+        gainScale = state.getProperty("gainScale", 1.0f);
+        phaseInverted = state.getProperty("phaseInverted", false);
+        autoGainEnabled = state.getProperty("autoGain", true);
+        outputPan = state.getProperty("outputPan", 0.0f);
+        currentMode = (ProcessingMode)(int)state.getProperty("procMode", 0);
+        displayRange = state.getProperty("displayRange", 30.0f);
     }
 }
 
