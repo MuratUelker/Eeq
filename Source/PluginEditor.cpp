@@ -97,6 +97,10 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     setResizable(true, true);
     setResizeLimits(800, 550, 2400, 1400);
     setWantsKeyboardFocus(true);
+    
+    // High DPI / Retina support
+    setResizeLimits(800, 550, 2400, 1400);
+    setRepaintsOnMouseActivity(true);
 
     refreshPresetList();
     presetSelector.setSelectedId(1);
@@ -1136,6 +1140,69 @@ bool EeqEditor::keyPressed(const juce::KeyPress& key)
     if (key == juce::KeyPress('z', true, true))
     {
         processor.redo();
+        return true;
+    }
+    if (key == juce::KeyPress('b', false, false))
+    {
+        if (selectedBand >= 0)
+        {
+            auto id = juce::String(selectedBand + 1);
+            bool b = processor.getAPVTS().getRawParameterValue("b" + id + "_bypass")->load() > 0.5f;
+            processor.getAPVTS().getParameter("b" + id + "_bypass")->setValueNotifyingHost(b ? 0.0f : 1.0f);
+        }
+        return true;
+    }
+    if (key == juce::KeyPress('s', false, false))
+    {
+        if (selectedBand >= 0)
+        {
+            auto id = juce::String(selectedBand + 1);
+            bool s = processor.getAPVTS().getRawParameterValue("b" + id + "_solo")->load() > 0.5f;
+            processor.getAPVTS().getParameter("b" + id + "_solo")->setValueNotifyingHost(s ? 0.0f : 1.0f);
+        }
+        return true;
+    }
+    if (key == juce::KeyPress('d', false, false))
+    {
+        if (selectedBand >= 0)
+        {
+            processor.pushUndoState();
+            auto id = juce::String(selectedBand + 1);
+            bool d = processor.getAPVTS().getRawParameterValue("b" + id + "_dyn")->load() > 0.5f;
+            processor.getAPVTS().getParameter("b" + id + "_dyn")->setValueNotifyingHost(d ? 0.0f : 1.0f);
+        }
+        return true;
+    }
+    if (key == juce::KeyPress::leftKey)
+    {
+        navigateBand(-1);
+        return true;
+    }
+    if (key == juce::KeyPress::rightKey)
+    {
+        navigateBand(1);
+        return true;
+    }
+    if (key == juce::KeyPress::upKey)
+    {
+        if (selectedBand >= 0)
+        {
+            auto id = juce::String(selectedBand + 1);
+            float gain = processor.getAPVTS().getRawParameterValue("b" + id + "_gain")->load();
+            processor.getAPVTS().getParameter("b" + id + "_gain")->setValueNotifyingHost(
+                processor.getAPVTS().getParameter("b" + id + "_gain")->convertTo0to1(gain + 0.5f));
+        }
+        return true;
+    }
+    if (key == juce::KeyPress::downKey)
+    {
+        if (selectedBand >= 0)
+        {
+            auto id = juce::String(selectedBand + 1);
+            float gain = processor.getAPVTS().getRawParameterValue("b" + id + "_gain")->load();
+            processor.getAPVTS().getParameter("b" + id + "_gain")->setValueNotifyingHost(
+                processor.getAPVTS().getParameter("b" + id + "_gain")->convertTo0to1(gain - 0.5f));
+        }
         return true;
     }
     return false;

@@ -19,7 +19,7 @@ juce_add_plugin(Eeq
     COMPANY_NAME "EeqAudio"
     PLUGIN_MANUFACTURER_CODE EeqA
     PLUGIN_CODE Eeq1
-    FORMATS VST3 AU Standalone
+    FORMATS VST3 AU Standalone CLAP
     PRODUCT_NAME "Eeq"
     IS_SYNTH FALSE
     NEEDS_MIDI_INPUT FALSE
@@ -29,6 +29,9 @@ juce_add_plugin(Eeq
     COPY_PLUGIN_AFTER_BUILD FALSE
     AU_MAIN_TYPE kAudioUnitType_Effect
     VST3_CATEGORIES "Fx" "EQ"
+    CLAP_ID "com.eeqaudio.eeq"
+    CLAP_DESCRIPTION "Eeq Parametric EQ"
+    CLAP_VERSION "0.1.0"
 )
 
 target_sources(Eeq PRIVATE
