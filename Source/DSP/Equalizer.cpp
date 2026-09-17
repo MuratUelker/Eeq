@@ -1,18 +1,39 @@
 #include "Equalizer.h"
+#include <cmath>
 
-void Equalizer::prepare(double sampleRate, int /*samplesPerBlock*/)
+void Equalizer::prepare(double sampleRate, int samplesPerBlock)
 {
     currentSampleRate = sampleRate;
+    blockSize = samplesPerBlock;
     for (auto& f : filters)
         f.prepare(sampleRate);
+    envelope.fill(0.0f);
+    firBufferL.fill(0.0f);
+    firBufferR.fill(0.0f);
+    firWritePos = 0;
 }
 
-void Equalizer::process(float* left, float* right, int numSamples)
+void Equalizer::processDynamicEQ(int bandIdx, float& gain, float inputLevel)
 {
-    for (int i = 0; i < MAX_BANDS; ++i)
+    auto& dyn = bands[bandIdx].dynamic;
+    if (!dyn.enabled) return;
+
+    float threshold = dyn.autoThreshold ? -20.0f : dyn.threshold;
+    float attack = 1.0f - std::exp(-1.0f / (currentSampleRate * dyn.attackMs / 1000.0f));
+    float release = 1.0f - std::exp(-1.0f / (currentSampleRate * dyn.releaseMs / 1000.0f));
+
+    float levelDB = 20.0f * std::log10(std::max(inputLevel, 1e-10f));
+
+    if (levelDB > envelope[bandIdx])
+        envelope[bandIdx] += attack * (levelDB - envelope[bandIdx]);
+    else
+        envelope[bandIdx] += release * (levelDB - envelope[bandIdx]);
+
+    float over = envelope[bandIdx] - threshold;
+    if (over > 0.0f)
     {
-        if (bands[i].active && !bands[i].bypassed)
-            filters[i].processStereo(left, right, numSamples);
+        float reduction = over * (dyn.dynamicRange / 30.0f);
+        gain += reduction;
     }
 }
 
@@ -21,7 +42,55 @@ void Equalizer::setBand(int index, const BandState& state)
     if (index < 0 || index >= MAX_BANDS) return;
     bands[index] = state;
     if (state.active)
-        filters[index].setParams(state.freq, state.gain, state.q, state.type);
+    {
+        float scaledGain = state.gain * gainScale;
+        filters[index].setParams(state.freq, scaledGain, state.q, state.type);
+    }
+}
+
+void Equalizer::process(float* left, float* right, int numSamples)
+{
+    bool hasSolo = false;
+    for (int i = 0; i < MAX_BANDS; ++i)
+        if (bands[i].soloed) { hasSolo = true; break; }
+
+    for (int i = 0; i < MAX_BANDS; ++i)
+    {
+        if (!bands[i].active || bands[i].bypassed) continue;
+        if (hasSolo && !bands[i].soloed) continue;
+
+        float effectiveGain = bands[i].gain * gainScale;
+
+        if (bands[i].dynamic.enabled)
+        {
+            float inputLevel = 0.0f;
+            for (int s = 0; s < numSamples; ++s)
+                inputLevel += left[s] * left[s];
+            inputLevel = std::sqrt(inputLevel / (float)numSamples);
+            processDynamicEQ(i, effectiveGain, inputLevel);
+        }
+
+        filters[i].setParams(bands[i].freq, effectiveGain, bands[i].q, bands[i].type);
+
+        switch (bands[i].channelMode)
+        {
+        case ChannelMode::Stereo:
+            filters[i].processStereo(left, right, numSamples);
+            break;
+        case ChannelMode::Mid:
+            filters[i].processMidSide(left, right, numSamples, true);
+            break;
+        case ChannelMode::Side:
+            filters[i].processMidSide(left, right, numSamples, false);
+            break;
+        case ChannelMode::Left:
+            filters[i].processLeft(left, numSamples);
+            break;
+        case ChannelMode::Right:
+            filters[i].processRight(right, numSamples);
+            break;
+        }
+    }
 }
 
 float Equalizer::getMagnitudeAtFreq(float freq) const
@@ -30,7 +99,13 @@ float Equalizer::getMagnitudeAtFreq(float freq) const
     for (int i = 0; i < MAX_BANDS; ++i)
     {
         if (bands[i].active && !bands[i].bypassed)
-            mag *= filters[i].getMagnitude(freq);
+        {
+            float scaledGain = bands[i].gain * gainScale;
+            BiquadFilter tempFilter;
+            const_cast<BiquadFilter&>(tempFilter).prepare(currentSampleRate);
+            const_cast<BiquadFilter&>(tempFilter).setParams(bands[i].freq, scaledGain, bands[i].q, bands[i].type);
+            mag *= tempFilter.getMagnitude(freq);
+        }
     }
     return mag;
 }

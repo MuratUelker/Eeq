@@ -4,7 +4,9 @@
 
 class EeqEditor : public juce::AudioProcessorEditor,
                    public juce::Timer,
-                   private juce::Slider::Listener
+                   private juce::Slider::Listener,
+                   private juce::ComboBox::Listener,
+                   private juce::Button::Listener
 {
 public:
     EeqEditor(EeqProcessor&);
@@ -23,6 +25,8 @@ public:
     bool keyPressed(const juce::KeyPress&) override;
 
     void sliderValueChanged(juce::Slider*) override;
+    void comboBoxChanged(juce::ComboBox*) override;
+    void buttonClicked(juce::Button*) override;
 
 private:
     EeqProcessor& processor;
@@ -32,6 +36,7 @@ private:
     static constexpr float MAX_FREQ = 22000.0f;
     static constexpr float MIN_DB = -30.0f;
     static constexpr float MAX_DB = 30.0f;
+    static constexpr int NUM_PIANO_KEYS = 128;
 
     struct BandVisual
     {
@@ -39,26 +44,68 @@ private:
         bool active = false;
         bool hovered = false;
         bool selected = false;
+        bool soloed = false;
+        bool bypassed = false;
     };
     std::array<BandVisual, NUM_BANDS> bandVisuals;
     int selectedBand = -1;
     int hoveredBand = -1;
     bool dragging = false;
+    bool fullScreen = false;
 
-    // Band controls panel
-    juce::Slider freqSlider, gainSlider, qSlider;
-    juce::ComboBox typeBox;
-    juce::ToggleButton activeToggle, bypassToggle;
-    juce::Label freqLabel{"", "Freq"}, gainLabel{"", "Gain"}, qLabel{"", "Q"}, typeLabel{"", "Type"};
+    // Horizontal zoom
+    float hZoom = 1.0f;
+    float hScroll = 0.0f;
 
+    // Multi-band selection
+    std::vector<int> multiSelectedBands;
+
+    // === Top bar controls ===
     juce::ComboBox presetSelector;
     juce::TextButton savePresetBtn{"Save"};
-    juce::TextButton deletePresetBtn{"Del"};
-
+    juce::ComboBox procModeBox;
     juce::ComboBox analyzerMode;
-    juce::ToggleButton globalBypassBtn{"Bypass"};
-    juce::ToggleButton autoGainBtn{"Auto Gain"};
+    juce::ToggleButton freezeBtn{"F"};
+    juce::ToggleButton abBtn{"A"};
+    juce::TextButton undoBtn{"Undo"};
+    juce::TextButton redoBtn{"Redo"};
+    juce::ToggleButton fullScreenBtn{"FS"};
 
+    // === Band controls panel ===
+    juce::Slider freqSlider, gainSlider, qSlider;
+    juce::ComboBox typeBox, channelModeBox;
+    juce::Label freqLabel{"", "Freq"}, gainLabel{"", "Gain"}, qLabel{"", "Q"},
+                typeLabel{"", "Type"}, chLabel{"", "Ch"};
+
+    // Solo / Bypass per band
+    juce::ToggleButton soloBtn{"S"};
+    juce::ToggleButton bandBypassBtn{"B"};
+
+    // Dynamic EQ controls
+    juce::ToggleButton dynBtn{"Dyn"};
+    juce::Slider dynRangeSlider;
+    juce::Slider dynThreshSlider;
+    juce::ToggleButton dynAutoBtn{"Auto"};
+    juce::Label dynRangeLabel{"", "Range"}, dynThreshLabel{"", "Thresh"};
+
+    // === Bottom bar controls ===
+    juce::ToggleButton phaseBtn{"Phase"};
+    juce::ToggleButton autoGainBtn{"AG"};
+    juce::Slider outputPanSlider;
+    juce::Label panLabel{"", "Pan"};
+    juce::Slider gainScaleSlider;
+    juce::Label gainScaleLabel{"", "Scale"};
+
+    // Output meter
+    float outputLevelL = 0.0f, outputLevelR = 0.0f;
+
+    // EQ Match
+    juce::ToggleButton eqMatchBtn{"Match"};
+    juce::TextButton eqMatchCaptureBtn{"Capture"};
+    juce::TextButton eqMatchApplyBtn{"Apply"};
+    bool eqMatchCapturing = false;
+
+    // Colours
     juce::Colour bandColours[24] = {
         juce::Colour(0xFFe94560), juce::Colour(0xFF00b4d8), juce::Colour(0xFF533483),
         juce::Colour(0xFFe76f51), juce::Colour(0xFF2a9d8f), juce::Colour(0xFFe9c46a),
@@ -70,10 +117,11 @@ private:
         juce::Colour(0xFF4361ee), juce::Colour(0xFF7209b7), juce::Colour(0xFF560bad),
     };
 
-    float freqToX(float freq, float w) const;
-    float xToFreq(float x, float w) const;
-    float gainToY(float gain, float h) const;
-    float yToGain(float y, float h) const;
+    // Layout
+    float freqToX(float freq, juce::Rectangle<float> d) const;
+    float xToFreq(float x, juce::Rectangle<float> d) const;
+    float gainToY(float gain, juce::Rectangle<float> d) const;
+    float yToGain(float y, juce::Rectangle<float> d) const;
     float qToRadius(float q) const;
 
     int findBandAt(float mx, float my) const;
@@ -88,17 +136,20 @@ private:
     void drawEQCurve(juce::Graphics&, juce::Rectangle<float>);
     void drawBandNodes(juce::Graphics&, juce::Rectangle<float>);
     void drawBandInfo(juce::Graphics&, juce::Rectangle<float>);
-
-    void setupSlider(juce::Slider& s, juce::Label& l, juce::String name,
-                     std::function<void(float)> cb);
+    void drawPianoRoll(juce::Graphics&, juce::Rectangle<float>);
+    void drawOutputMeter(juce::Graphics&, juce::Rectangle<float>);
+    void drawPeakHold(juce::Graphics&, juce::Rectangle<float>);
 
     juce::Rectangle<float> getDisplayBounds() const;
-    juce::Rectangle<float> getControlsBounds() const;
     juce::Rectangle<float> getTopBarBounds() const;
+    juce::Rectangle<float> getBottomBarBounds() const;
+    juce::Rectangle<float> getPianoBounds() const;
+    juce::Rectangle<float> getMeterBounds() const;
 
     void loadPreset(int index);
-    void savePreset(const juce::String& name);
-    void initPresets();
+
+    int freqToMidiKey(float freq) const;
+    float midiKeyToFreq(int key) const;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(EeqEditor)
 };

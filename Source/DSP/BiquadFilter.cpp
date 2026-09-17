@@ -31,12 +31,6 @@ inline float BiquadFilter::processSingle(float x, float& x1, float& x2, float& y
     return y;
 }
 
-void BiquadFilter::process(float* data, int numSamples)
-{
-    for (int i = 0; i < numSamples; ++i)
-        data[i] = processSingle(data[i], x1L, x2L, y1L, y2L);
-}
-
 void BiquadFilter::processStereo(float* left, float* right, int numSamples)
 {
     for (int i = 0; i < numSamples; ++i)
@@ -44,6 +38,35 @@ void BiquadFilter::processStereo(float* left, float* right, int numSamples)
         left[i] = processSingle(left[i], x1L, x2L, y1L, y2L);
         right[i] = processSingle(right[i], x1R, x2R, y1R, y2R);
     }
+}
+
+void BiquadFilter::processMidSide(float* left, float* right, int numSamples, bool isMid)
+{
+    for (int i = 0; i < numSamples; ++i)
+    {
+        float mid = left[i] + right[i];
+        float side = left[i] - right[i];
+
+        if (isMid)
+            mid = processSingle(mid, x1L, x2L, y1L, y2L);
+        else
+            side = processSingle(side, x1L, x2L, y1L, y2L);
+
+        left[i] = (mid + side) * 0.5f;
+        right[i] = (mid - side) * 0.5f;
+    }
+}
+
+void BiquadFilter::processLeft(float* left, int numSamples)
+{
+    for (int i = 0; i < numSamples; ++i)
+        left[i] = processSingle(left[i], x1L, x2L, y1L, y2L);
+}
+
+void BiquadFilter::processRight(float* right, int numSamples)
+{
+    for (int i = 0; i < numSamples; ++i)
+        right[i] = processSingle(right[i], x1R, x2R, y1R, y2R);
 }
 
 float BiquadFilter::getMagnitude(float freq) const
@@ -146,6 +169,20 @@ void BiquadFilter::calcCoefficients()
         b2 = (A - alphaF + k2 * A + alphaF * A) / denom;
         a1 = 2.0f * (k2 - 1.0f) / denom;
         a2 = (1.0f - k / currentQ + k2) / denom;
+        break;
+    }
+    case FilterType::TiltShelf:
+    {
+        float k = std::tan(3.14159265f * clampedFreq / (float)fs);
+        float k2 = k * k;
+        float sqrtA = std::sqrt(A);
+        float alphaF = sqrtA * k;
+        float denom = 1.0f + alphaF / currentQ + k2;
+        b0 = (A + k2 * A + alphaF * (A - 1.0f)) / denom;
+        b1 = 2.0f * (k2 * A - A) / denom;
+        b2 = (A + k2 * A - alphaF * (A - 1.0f)) / denom;
+        a1 = 2.0f * (k2 - 1.0f) / denom;
+        a2 = (1.0f - alphaF / currentQ + k2) / denom;
         break;
     }
     }

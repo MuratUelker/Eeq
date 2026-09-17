@@ -3,8 +3,16 @@
 #include <cmath>
 #include <cstring>
 
-static constexpr int FFT_SIZE = 4096;
-static constexpr int NUM_BINS = FFT_SIZE / 2;
+static constexpr int MAX_FFT_SIZE = 8192;
+static constexpr int MAX_BINS = MAX_FFT_SIZE / 2;
+
+enum class AnalyzerResolution
+{
+    Low = 1024,
+    Medium = 2048,
+    High = 4096,
+    Maximum = 8192
+};
 
 class SpectrumAnalyzer
 {
@@ -13,18 +21,47 @@ public:
 
     void prepare(double sampleRate);
     void pushSamples(const float* data, int numSamples);
-    const std::array<float, NUM_BINS>& getSpectrumData() const { return spectrum; }
 
-    static constexpr int HIST_SIZE = 4;
-    std::array<std::array<float, NUM_BINS>, HIST_SIZE> history{};
-    int historyPos = 0;
+    void setResolution(AnalyzerResolution res);
+    void setSpeed(float speed) { decayRate = speed; }
+    void setRange(float range) { dbRange = range; }
+    void setTilt(float tilt) { tiltDB = tilt; }
+    void setFreeze(bool f) { frozen = f; }
+    bool isFrozen() const { return frozen; }
+
+    const std::array<float, MAX_BINS>& getSpectrumData() const { return spectrum; }
+    int getNumBins() const { return numBins; }
+    float getSampleRate() const { return (float)fs; }
+
+    // EQ Match
+    void startCapture() { captureActive = true; captureSpectrum.fill(0.0f); captureCount = 0; }
+    void stopCapture() { captureActive = false; }
+    bool isCapturing() const { return captureActive; }
+    const std::array<float, MAX_BINS>& getCaptureSpectrum() const { return captureSpectrum; }
+    int getCaptureCount() const { return captureCount; }
+
+    // Peak hold
+    std::array<float, MAX_BINS> peakHold{};
+    std::array<float, MAX_BINS> peakDecay{};
 
 private:
     double fs = 44100.0;
-    std::array<float, FFT_SIZE * 2> fftBuffer{};
-    std::array<float, NUM_BINS> spectrum{};
+    int fftSize = 4096;
+    int numBins = 2048;
+    AnalyzerResolution resolution = AnalyzerResolution::High;
+
+    std::array<float, MAX_FFT_SIZE * 2> fftBuffer{};
+    std::array<float, MAX_BINS> spectrum{};
     int writePos = 0;
     float decayRate = 0.85f;
+    float dbRange = 90.0f;
+    float tiltDB = 4.5f;
+    bool frozen = false;
+
+    // EQ Match capture
+    bool captureActive = false;
+    std::array<float, MAX_BINS> captureSpectrum{};
+    int captureCount = 0;
 
     void processFFT();
     void fftRadix2(float* real, float* imag, int n);
