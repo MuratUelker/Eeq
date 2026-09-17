@@ -101,6 +101,7 @@ public:
 
     // EQ Match
     void applyEQMatch();
+    void applyEQMatchExternal();
     bool isEQMatchActive() const { return eqMatchActive; }
     void setEQMatchActive(bool active) { eqMatchActive = active; }
 

@@ -498,6 +498,88 @@ void EeqProcessor::applyEQMatch()
     }
 }
 
+void EeqProcessor::applyEQMatchExternal()
+{
+    auto& analyzer = getSpectrumAnalyzer();
+    if (!analyzer.hasExternalSpectrum()) return;
+
+    const auto& external = analyzer.getExternalSpectrum();
+    int numBins = analyzer.getNumBins();
+    float sr = analyzer.getSampleRate();
+    float nyquist = sr * 0.5f;
+
+    pushUndoState();
+
+    // Sample the external spectrum at log-spaced points and find peaks/valleys
+    struct SpectralPoint { float freq; float magDB; };
+    std::vector<SpectralPoint> points;
+
+    int numSamplePoints = 128;
+    for (int i = 0; i < numSamplePoints; ++i)
+    {
+        float normFreq = (float)(i + 1) / (float)(numSamplePoints + 1);
+        float freq = 20.0f * std::pow(nyquist / 20.0f, normFreq); // Log-spaced
+        int bin = (int)(freq / nyquist * (float)numBins);
+        bin = juce::jlimit(1, numBins - 1, bin);
+        float magVal = external[bin];
+        float magDB = (magVal - 0.5f) * 60.0f;
+        points.push_back({ freq, magDB });
+    }
+
+    // Find local peaks and valleys (significant deviation from neighbors)
+    struct Peak { float freq; float gainDB; float q; };
+    std::vector<Peak> peaks;
+
+    for (int i = 2; i < (int)points.size() - 2; ++i)
+    {
+        float avg = (points[i - 2].magDB + points[i - 1].magDB + points[i + 1].magDB + points[i + 2].magDB) / 4.0f;
+        float deviation = points[i].magDB - avg;
+
+        if (std::abs(deviation) >= 1.0f)
+        {
+            // Determine Q based on how narrow the peak is
+            float q = 1.0f;
+            if (i >= 3 && i < (int)points.size() - 3)
+            {
+                float avgWide = (points[i - 3].magDB + points[i + 3].magDB) / 2.0f;
+                float narrowness = std::abs(deviation) / (std::abs(deviation - (points[i].magDB - avgWide)) + 0.1f);
+                q = juce::jlimit(0.3f, 5.0f, narrowness * 1.5f);
+            }
+
+            peaks.push_back({ points[i].freq, -deviation, q });
+        }
+    }
+
+    // Sort by magnitude of deviation (strongest first)
+    std::sort(peaks.begin(), peaks.end(), [](const Peak& a, const Peak& b)
+    {
+        return std::abs(a.gainDB) > std::abs(b.gainDB);
+    });
+
+    // Apply to available bands
+    int bandIdx = 0;
+    for (const auto& peak : peaks)
+    {
+        if (bandIdx >= MAX_BANDS) break;
+        if (std::abs(peak.gainDB) < 0.5f) continue;
+
+        auto id = juce::String(bandIdx + 1);
+        float normQ = juce::jlimit(0.1f, 10.0f, peak.q);
+        float normQ01 = (normQ - 0.1f) / 9.9f;
+
+        apvts.getParameter("b" + id + "_freq")->setValueNotifyingHost(
+            apvts.getParameter("b" + id + "_freq")->convertTo0to1(peak.freq));
+        apvts.getParameter("b" + id + "_gain")->setValueNotifyingHost(
+            apvts.getParameter("b" + id + "_gain")->convertTo0to1(peak.gainDB));
+        apvts.getParameter("b" + id + "_q")->setValueNotifyingHost(normQ01);
+        apvts.getParameter("b" + id + "_type")->setValueNotifyingHost(
+            apvts.getParameter("b" + id + "_type")->convertTo0to1(0)); // Bell
+        apvts.getParameter("b" + id + "_active")->setValueNotifyingHost(1.0f);
+
+        bandIdx++;
+    }
+}
+
 static juce::File getStateFile()
 {
     return juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
