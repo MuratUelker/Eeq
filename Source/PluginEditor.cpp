@@ -649,12 +649,38 @@ void EeqEditor::mouseDown(const juce::MouseEvent& e)
     }
     else
     {
-        selectBand(-1);
+        float freq = xToFreq(mx, display);
+        float gain = yToGain(my, display);
+
+        // Spectrum Grab: check if clicking near the EQ curve
+        float curveMagDB = 20.0f * std::log10(std::max(processor.getEqualizer().getMagnitudeAtFreq(freq), 1e-10f));
+        float distToCurve = std::abs(gain - curveMagDB);
+
+        if (distToCurve < 4.0f)
+        {
+            // Near the EQ curve — start spectrum grab
+            spectrumGrabbing = true;
+            spectrumGrabFreq = freq;
+            spectrumGrabGain = curveMagDB;
+            addBandAt(freq, curveMagDB);
+        }
+        else
+        {
+            // Far from curve — just add a band at click position
+            addBandAt(freq, gain);
+        }
     }
 }
 
 void EeqEditor::mouseDrag(const juce::MouseEvent& e)
 {
+    if (spectrumGrabbing && selectedBand >= 0)
+    {
+        // Spectrum grab: update the band to follow the spectrum curve
+        updateBandFromMouse(selectedBand, e.position.x, e.position.y);
+        return;
+    }
+
     if (dragging && selectedBand >= 0)
     {
         updateBandFromMouse(selectedBand, e.position.x, e.position.y);
@@ -671,7 +697,11 @@ void EeqEditor::mouseDrag(const juce::MouseEvent& e)
     }
 }
 
-void EeqEditor::mouseUp(const juce::MouseEvent&) { dragging = false; }
+void EeqEditor::mouseUp(const juce::MouseEvent&)
+{
+    dragging = false;
+    spectrumGrabbing = false;
+}
 
 void EeqEditor::mouseDoubleClick(const juce::MouseEvent& e)
 {

@@ -52,6 +52,9 @@ private:
     int hoveredBand = -1;
     bool dragging = false;
     bool fullScreen = false;
+    bool spectrumGrabbing = false;
+    float spectrumGrabFreq = 0.0f;
+    float spectrumGrabGain = 0.0f;
 
     // Horizontal zoom
     float hZoom = 1.0f;

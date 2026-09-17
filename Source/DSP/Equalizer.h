@@ -2,6 +2,7 @@
 #include "BiquadFilter.h"
 #include <array>
 #include <cstring>
+#include <complex>
 
 static constexpr int MAX_BANDS = 24;
 
@@ -42,11 +43,22 @@ private:
     // Dynamic EQ envelope
     std::array<float, MAX_BANDS> envelope{};
 
-    // Linear phase FIR
-    static constexpr int FIR_SIZE = 4096;
-    std::array<float, FIR_SIZE> firBufferL{};
-    std::array<float, FIR_SIZE> firBufferR{};
-    int firWritePos = 0;
+    // Linear phase FFT
+    static constexpr int FFT_SIZE = 4096;
+    static constexpr int FFT_HALF = FFT_SIZE / 2;
+    static constexpr int OVERLAP = FFT_HALF;
+    std::array<float, FFT_SIZE> overlapL{};
+    std::array<float, FFT_SIZE> overlapR{};
+    std::array<float, FFT_SIZE> inputBufferL{};
+    std::array<float, FFT_SIZE> inputBufferR{};
+    int lpWritePos = 0;
+    bool lpReady = false;
 
+    // FFT workspace
+    std::array<std::complex<float>, FFT_SIZE> fftWindow{};
+    std::array<float, FFT_SIZE> windowCoeffs{};
+
+    void computeEQFrequencyResponse(std::complex<float>* response, int numBins, float sampleRate);
+    void fftInPlace(std::complex<float>* data, int n, bool inverse);
     void processDynamicEQ(int bandIdx, float& gain, float inputLevel);
 };
