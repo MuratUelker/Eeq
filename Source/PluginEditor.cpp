@@ -1034,13 +1034,18 @@ void EeqEditor::buttonClicked(juce::Button* btn)
     else if (btn == &fullScreenBtn)
     {
         fullScreen = !fullScreen;
+        fullScreenBtn.setToggleState(fullScreen, juce::dontSendNotification);
         if (fullScreen)
         {
-            auto screenBounds = juce::Desktop::getInstance().getDisplays().getPrimaryDisplay()->totalArea;
-            setBounds(0, 0, screenBounds.getWidth(), screenBounds.getHeight());
+            previousBounds = getBounds();
+            auto* display = juce::Desktop::getInstance().getDisplays().getPrimaryDisplay();
+            if (display != nullptr)
+                setBounds(display->totalArea);
         }
         else
-            setSize(1100, 700);
+        {
+            setBounds(previousBounds);
+        }
     }
     else if (btn == &phaseBtn)
         processor.setPhaseInverted(phaseBtn.getToggleState());
