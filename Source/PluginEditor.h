@@ -1,9 +1,11 @@
 #pragma once
 #include <juce_audio_processors/juce_audio_processors.h>
+#include <juce_opengl/juce_opengl.h>
 #include "PluginProcessor.h"
 
 class EeqEditor : public juce::AudioProcessorEditor,
                    public juce::Timer,
+                   public juce::OpenGLRenderer,
                    private juce::Slider::Listener,
                    private juce::ComboBox::Listener,
                    private juce::Button::Listener
@@ -27,6 +29,11 @@ public:
     void sliderValueChanged(juce::Slider*) override;
     void comboBoxChanged(juce::ComboBox*) override;
     void buttonClicked(juce::Button*) override;
+
+    // OpenGLRenderer
+    void newOpenGLContextCreated() override;
+    void renderOpenGL() override;
+    void openGLContextClosing() override;
 
 private:
     EeqProcessor& processor;
@@ -173,8 +180,15 @@ private:
     void loadFactoryPreset(int index);
     void updateAllControlsFromProcessor();
 
+    // OpenGL
+    void initializeOpenGL();
+    void shutdownOpenGL();
+
     int freqToMidiKey(float freq) const;
     float midiKeyToFreq(int key) const;
+
+    juce::OpenGLContext openGLContext;
+    bool useOpenGL = true;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(EeqEditor)
 };

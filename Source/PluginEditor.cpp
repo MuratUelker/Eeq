@@ -348,11 +348,15 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     midiLearnBtn.addListener(this);
 
     startTimerHz(30);
+
+    if (useOpenGL)
+        initializeOpenGL();
 }
 
 EeqEditor::~EeqEditor()
 {
     stopTimer();
+    shutdownOpenGL();
     freqSlider.removeListener(this);
     gainSlider.removeListener(this);
     qSlider.removeListener(this);
@@ -1806,4 +1810,32 @@ void EeqEditor::updateAllControlsFromProcessor()
         }
     }
     selectBand(-1);
+}
+
+void EeqEditor::initializeOpenGL()
+{
+    openGLContext.setRenderer(this);
+    openGLContext.attachTo(*this);
+    openGLContext.setContinuousRepainting(true);
+}
+
+void EeqEditor::shutdownOpenGL()
+{
+    openGLContext.detach();
+}
+
+void EeqEditor::newOpenGLContextCreated()
+{
+    // Initialize OpenGL resources here (shaders, textures, etc.)
+}
+
+void EeqEditor::renderOpenGL()
+{
+    // OpenGL rendering - the paint() method will be called with OpenGL graphics context
+    // when using OpenGLContext with continuous repainting
+}
+
+void EeqEditor::openGLContextClosing()
+{
+    // Clean up OpenGL resources here
 }

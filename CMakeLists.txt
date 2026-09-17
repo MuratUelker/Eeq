@@ -52,6 +52,7 @@ target_link_libraries(Eeq
     PRIVATE
         juce::juce_audio_utils
         juce::juce_dsp
+        juce::juce_opengl
     PUBLIC
         juce::juce_recommended_config_flags
         juce::juce_core
