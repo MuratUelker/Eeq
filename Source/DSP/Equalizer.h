@@ -45,6 +45,11 @@ public:
 
     void setSidechainLevels(float scL, float scR) { scLevelL = scL; scLevelR = scR; }
 
+    // Smart parameter interpolation
+    void setBandSmoothed(int index, const BandState& state, int numSamples);
+    void setSmoothingTime(float ms) { smoothingTimeMs = ms; }
+    float getSmoothingTime() const { return smoothingTimeMs; }
+
     static constexpr int NUM_BANDS = MAX_BANDS;
 
 private:
@@ -52,11 +57,13 @@ private:
 
     std::array<std::array<BiquadFilter, MAX_FILTERS_PER_BAND>, MAX_BANDS> filterStages;
     std::array<BandState, MAX_BANDS> bands;
+    std::array<BandState, MAX_BANDS> targetBands;
     double currentSampleRate = 44100.0;
     int blockSize = 512;
     ProcessingMode procMode = ProcessingMode::ZeroLatency;
     LinearPhaseResolution lpResolution = LinearPhaseResolution::High;
     float gainScale = 1.0f;
+    float smoothingTimeMs = 20.0f; // Default 20ms smoothing
 
     // Dynamic EQ envelope
     std::array<float, MAX_BANDS> envelope{};

@@ -90,6 +90,7 @@ void Equalizer::setBand(int index, const BandState& state)
 {
     if (index < 0 || index >= MAX_BANDS) return;
     bands[index] = state;
+    targetBands[index] = state;
     responseDirty = true;
     if (state.active)
     {
@@ -105,6 +106,13 @@ void Equalizer::setBand(int index, const BandState& state)
     }
 }
 
+void Equalizer::setBandSmoothed(int index, const BandState& state, int numSamples)
+{
+    if (index < 0 || index >= MAX_BANDS) return;
+    targetBands[index] = state;
+    responseDirty = true;
+}
+
 static void processChannelWithStages(BiquadFilter* stages, int numStages,
                                      float* ch, int numSamples)
 {
@@ -114,6 +122,22 @@ static void processChannelWithStages(BiquadFilter* stages, int numStages,
 
 void Equalizer::process(float* left, float* right, int numSamples)
 {
+    // Smooth parameter interpolation
+    float smoothingFactor = 1.0f - std::exp(-1.0f / (currentSampleRate * smoothingTimeMs / 1000.0f));
+    for (int i = 0; i < MAX_BANDS; ++i)
+    {
+        if (bands[i].active != targetBands[i].active)
+            bands[i].active = targetBands[i].active;
+        
+        if (bands[i].active)
+        {
+            // Interpolate freq, gain, q
+            bands[i].freq += (targetBands[i].freq - bands[i].freq) * smoothingFactor;
+            bands[i].gain += (targetBands[i].gain - bands[i].gain) * smoothingFactor;
+            bands[i].q += (targetBands[i].q - bands[i].q) * smoothingFactor;
+        }
+    }
+
     bool hasSolo = false;
     for (int i = 0; i < MAX_BANDS; ++i)
         if (bands[i].soloed) { hasSolo = true; break; }
