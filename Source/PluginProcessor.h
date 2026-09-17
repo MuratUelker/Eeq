@@ -200,12 +200,30 @@ private:
     ClipboardBand clipboardBand;
     bool clipboardValid = false;
 
+    // Instance List / Inter-plugin communication
+    struct InstanceInfo
+    {
+        uintptr_t instanceId = 0;
+        juce::String name;
+        std::array<float, 4096> spectrum{};
+        bool hasSpectrum = false;
+        bool isVisible = true;
+    };
+
+public:
+    static std::vector<InstanceInfo*>& getInstanceList();
+    void registerInstance();
+    void unregisterInstance();
+    void broadcastSpectrum(const std::array<float, 4096>& spectrum);
+    void setInstanceName(const juce::String& name);
+    const juce::String& getInstanceName() const;
+    const std::vector<InstanceInfo*>& getVisibleInstances() const;
+
+private:
     EQSnapshot captureState();
     void applyState(const EQSnapshot& state);
     void saveStateToFile();
     void loadStateFromFile();
-
-private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(EeqProcessor)
 };

@@ -148,6 +148,14 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     analyzerMode.setColour(juce::ComboBox::backgroundColourId, juce::Colour(0xFF16213e));
     analyzerMode.setColour(juce::ComboBox::textColourId, juce::Colour(0xFFe0e0ff));
     addAndMakeVisible(analyzerMode);
+    analyzerMode.addListener(this);
+
+    instanceSelector.addItem("Self", 1);
+    instanceSelector.setSelectedId(1);
+    instanceSelector.setColour(juce::ComboBox::backgroundColourId, juce::Colour(0xFF16213e));
+    instanceSelector.setColour(juce::ComboBox::textColourId, juce::Colour(0xFFe0e0ff));
+    addAndMakeVisible(instanceSelector);
+    instanceSelector.addListener(this);
 
     freezeBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFa0a0c0));
     freezeBtn.setClickingTogglesState(true);
@@ -1143,6 +1151,30 @@ void EeqEditor::comboBoxChanged(juce::ComboBox* box)
         float ranges[] = {3.0f, 6.0f, 12.0f, 30.0f};
         processor.setDisplayRange(ranges[displayRangeBox.getSelectedId() - 1]);
     }
+    else if (box == &instanceSelector)
+    {
+        // Instance selector changed - update spectrum analyzer source
+        int selectedId = instanceSelector.getSelectedId();
+        if (selectedId == 1)
+        {
+            // Self - use own spectrum
+            processor.getSpectrumAnalyzer().setExternalSpectrum({}, 0);
+        }
+        else
+        {
+            // External instance
+            auto& instances = processor.getVisibleInstances();
+            int index = selectedId - 2;
+            if (index >= 0 && index < (int)instances.size())
+            {
+                auto* info = instances[index];
+                if (info->hasSpectrum)
+                {
+                    processor.getSpectrumAnalyzer().setExternalSpectrum(info->spectrum, info->spectrum.size());
+                }
+            }
+        }
+    }
     else if (box == &typeBox || box == &channelModeBox || box == &slopeBox)
     {
         if (selectedBand >= 0)
@@ -1746,6 +1778,8 @@ void EeqEditor::resized()
     x += 68;
     analyzerMode.setBounds(x, topBar.getY() + 6, 72, 24);
     x += 80;
+    instanceSelector.setBounds(x, topBar.getY() + 6, 90, 24);
+    x += 98;
     freezeBtn.setBounds(x, topBar.getY() + 6, 24, 24);
     x += 32;
     eqMatchBtn.setBounds(x, topBar.getY() + 6, 48, 24);
@@ -1832,6 +1866,7 @@ void EeqEditor::resized()
     npResolutionBox.toFront(true);
     displayRangeBox.toFront(true);
     analyzerMode.toFront(true);
+    instanceSelector.toFront(true);
     freqSlider.toFront(true);
     gainSlider.toFront(true);
     qSlider.toFront(true);

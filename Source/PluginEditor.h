@@ -80,6 +80,7 @@ private:
     juce::ComboBox npResolutionBox;
     juce::ComboBox analyzerMode;
     juce::ComboBox displayRangeBox;
+    juce::ComboBox instanceSelector;
     juce::ToggleButton freezeBtn{"F"};
     juce::ToggleButton abBtn{"A"};
     juce::TextButton undoBtn{"Undo"};

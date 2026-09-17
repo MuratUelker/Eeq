@@ -95,11 +95,13 @@ EeqProcessor::EeqProcessor()
       apvts(*this, nullptr, juce::Identifier("EeqState"), createLayout())
 {
     loadStateFromFile();
+    registerInstance();
 }
 
 EeqProcessor::~EeqProcessor()
 {
     saveStateToFile();
+    unregisterInstance();
 }
 
 void EeqProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
@@ -845,6 +847,80 @@ void EeqProcessor::pasteBandFromClipboard(int bandIndex)
     apvts.getParameter("b" + id + "_phase")->setValueNotifyingHost(clipboardBand.phaseInverted ? 1.0f : 0.0f);
     apvts.getParameter("b" + id + "_bypass")->setValueNotifyingHost(clipboardBand.bypassed ? 1.0f : 0.0f);
     apvts.getParameter("b" + id + "_solo")->setValueNotifyingHost(clipboardBand.soloed ? 1.0f : 0.0f);
+}
+
+std::vector<EeqProcessor::InstanceInfo*>& EeqProcessor::getInstanceList()
+{
+    static std::vector<InstanceInfo*> instanceList;
+    return instanceList;
+}
+
+void EeqProcessor::registerInstance()
+{
+    auto& list = getInstanceList();
+    InstanceInfo* info = new InstanceInfo();
+    info->instanceId = reinterpret_cast<uintptr_t>(this);
+    info->name = "Eeq Instance " + juce::String(list.size() + 1);
+    info->hasSpectrum = false;
+    info->isVisible = true;
+    list.push_back(info);
+}
+
+void EeqProcessor::unregisterInstance()
+{
+    auto& list = getInstanceList();
+    auto it = std::find_if(list.begin(), list.end(), 
+        [this](InstanceInfo* info) { return info->instanceId == reinterpret_cast<uintptr_t>(this); });
+    if (it != list.end())
+    {
+        delete *it;
+        list.erase(it);
+    }
+}
+
+void EeqProcessor::broadcastSpectrum(const std::array<float, 4096>& spectrum)
+{
+    auto& list = getInstanceList();
+    for (auto* info : list)
+    {
+        if (info->instanceId != reinterpret_cast<uintptr_t>(this))
+        {
+            info->spectrum = spectrum;
+            info->hasSpectrum = true;
+        }
+    }
+}
+
+void EeqProcessor::setInstanceName(const juce::String& name)
+{
+    auto& list = getInstanceList();
+    for (auto* info : list)
+    {
+        if (info->instanceId == reinterpret_cast<uintptr_t>(this))
+        {
+            info->name = name;
+            break;
+        }
+    }
+}
+
+const juce::String& EeqProcessor::getInstanceName() const
+{
+    static juce::String emptyString;
+    auto& list = getInstanceList();
+    for (auto* info : list)
+    {
+        if (info->instanceId == reinterpret_cast<uintptr_t>(this))
+        {
+            return info->name;
+        }
+    }
+    return emptyString;
+}
+
+const std::vector<EeqProcessor::InstanceInfo*>& EeqProcessor::getVisibleInstances() const
+{
+    return getInstanceList();
 }
 
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
