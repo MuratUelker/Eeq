@@ -69,6 +69,9 @@ juce::AudioProcessorValueTreeState::ParameterLayout EeqProcessor::createLayout()
     layout.add(std::make_unique<juce::AudioParameterChoice>(
         juce::ParameterID{"lpResolution", 1}, "Linear Phase Resolution",
         juce::StringArray{"Low (1024)", "Medium (2048)", "High (4096)", "Very High (8192)"}, 2));
+    layout.add(std::make_unique<juce::AudioParameterChoice>(
+        juce::ParameterID{"displayRange", 1}, "Display Range",
+        juce::StringArray{"3 dB", "6 dB", "12 dB", "30 dB"}, 3));
 
     return layout;
 }
@@ -167,6 +170,13 @@ void EeqProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuff
     {
         lpResolution = newResolution;
         equalizer.setLinearPhaseResolution(lpResolution);
+    }
+
+    // Check for display range change
+    float newDisplayRange = apvts.getRawParameterValue("displayRange")->load();
+    if (std::abs(newDisplayRange - displayRange) > 0.01f)
+    {
+        displayRange = newDisplayRange;
     }
 
     equalizer.setProcessingMode(currentMode);

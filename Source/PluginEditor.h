@@ -69,6 +69,7 @@ private:
     juce::ComboBox procModeBox;
     juce::ComboBox lpResolutionBox;
     juce::ComboBox analyzerMode;
+    juce::ComboBox displayRangeBox;
     juce::ToggleButton freezeBtn{"F"};
     juce::ToggleButton abBtn{"A"};
     juce::TextButton undoBtn{"Undo"};
