@@ -138,6 +138,10 @@ public:
     void loadUserPreset(const juce::String& name);
     juce::File getUserPresetFolder() const;
 
+    // Band clipboard
+    void copyBandToClipboard(int bandIndex);
+    void pasteBandFromClipboard(int bandIndex);
+
 private:
     Equalizer equalizer;
     SpectrumAnalyzer spectrum;
@@ -173,6 +177,28 @@ private:
     EQSnapshot stateA{};
     EQSnapshot stateB{};
     bool stateBActive = false;
+
+    // Band clipboard
+    struct ClipboardBand
+    {
+        float freq = 1000.0f;
+        float gain = 0.0f;
+        float q = 0.707f;
+        int type = 0;
+        bool active = false;
+        int channelMode = 0;
+        bool dynamicEnabled = false;
+        float dynRange = 0.0f;
+        float dynThreshold = -20.0f;
+        bool dynAutoThreshold = true;
+        bool scTrigger = false;
+        int slope = 3;
+        bool phaseInverted = false;
+        bool bypassed = false;
+        bool soloed = false;
+    };
+    ClipboardBand clipboardBand;
+    bool clipboardValid = false;
 
     EQSnapshot captureState();
     void applyState(const EQSnapshot& state);

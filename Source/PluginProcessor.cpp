@@ -794,6 +794,59 @@ void EeqProcessor::applyMidiMapping(const MidiMapping& mapping, float value)
     }
 }
 
+void EeqProcessor::copyBandToClipboard(int bandIndex)
+{
+    if (bandIndex < 0 || bandIndex >= MAX_BANDS) return;
+    
+    auto id = juce::String(bandIndex + 1);
+    clipboardBand.freq = apvts.getRawParameterValue("b" + id + "_freq")->load();
+    clipboardBand.gain = apvts.getRawParameterValue("b" + id + "_gain")->load();
+    clipboardBand.q = apvts.getRawParameterValue("b" + id + "_q")->load();
+    clipboardBand.type = (int)apvts.getRawParameterValue("b" + id + "_type")->load();
+    clipboardBand.active = apvts.getRawParameterValue("b" + id + "_active")->load() > 0.5f;
+    clipboardBand.channelMode = (int)apvts.getRawParameterValue("b" + id + "_ch")->load();
+    clipboardBand.dynamicEnabled = apvts.getRawParameterValue("b" + id + "_dyn")->load() > 0.5f;
+    clipboardBand.dynRange = apvts.getRawParameterValue("b" + id + "_dynRange")->load();
+    clipboardBand.dynThreshold = apvts.getRawParameterValue("b" + id + "_dynThresh")->load();
+    clipboardBand.dynAutoThreshold = apvts.getRawParameterValue("b" + id + "_dynAuto")->load() > 0.5f;
+    clipboardBand.scTrigger = apvts.getRawParameterValue("b" + id + "_sc")->load() > 0.5f;
+    clipboardBand.slope = (int)apvts.getRawParameterValue("b" + id + "_slope")->load();
+    clipboardBand.phaseInverted = apvts.getRawParameterValue("b" + id + "_phase")->load() > 0.5f;
+    clipboardBand.bypassed = apvts.getRawParameterValue("b" + id + "_bypass")->load() > 0.5f;
+    clipboardBand.soloed = apvts.getRawParameterValue("b" + id + "_solo")->load() > 0.5f;
+    clipboardValid = true;
+}
+
+void EeqProcessor::pasteBandFromClipboard(int bandIndex)
+{
+    if (bandIndex < 0 || bandIndex >= MAX_BANDS || !clipboardValid) return;
+    
+    auto id = juce::String(bandIndex + 1);
+    apvts.getParameter("b" + id + "_freq")->setValueNotifyingHost(
+        apvts.getParameter("b" + id + "_freq")->convertTo0to1(clipboardBand.freq));
+    apvts.getParameter("b" + id + "_gain")->setValueNotifyingHost(
+        apvts.getParameter("b" + id + "_gain")->convertTo0to1(clipboardBand.gain));
+    apvts.getParameter("b" + id + "_q")->setValueNotifyingHost(
+        apvts.getParameter("b" + id + "_q")->convertTo0to1(clipboardBand.q));
+    apvts.getParameter("b" + id + "_type")->setValueNotifyingHost(
+        apvts.getParameter("b" + id + "_type")->convertTo0to1(clipboardBand.type));
+    apvts.getParameter("b" + id + "_active")->setValueNotifyingHost(clipboardBand.active ? 1.0f : 0.0f);
+    apvts.getParameter("b" + id + "_ch")->setValueNotifyingHost(
+        apvts.getParameter("b" + id + "_ch")->convertTo0to1(clipboardBand.channelMode));
+    apvts.getParameter("b" + id + "_dyn")->setValueNotifyingHost(clipboardBand.dynamicEnabled ? 1.0f : 0.0f);
+    apvts.getParameter("b" + id + "_dynRange")->setValueNotifyingHost(
+        apvts.getParameter("b" + id + "_dynRange")->convertTo0to1(clipboardBand.dynRange));
+    apvts.getParameter("b" + id + "_dynThresh")->setValueNotifyingHost(
+        apvts.getParameter("b" + id + "_dynThresh")->convertTo0to1(clipboardBand.dynThreshold));
+    apvts.getParameter("b" + id + "_dynAuto")->setValueNotifyingHost(clipboardBand.dynAutoThreshold ? 1.0f : 0.0f);
+    apvts.getParameter("b" + id + "_sc")->setValueNotifyingHost(clipboardBand.scTrigger ? 1.0f : 0.0f);
+    apvts.getParameter("b" + id + "_slope")->setValueNotifyingHost(
+        apvts.getParameter("b" + id + "_slope")->convertTo0to1(clipboardBand.slope));
+    apvts.getParameter("b" + id + "_phase")->setValueNotifyingHost(clipboardBand.phaseInverted ? 1.0f : 0.0f);
+    apvts.getParameter("b" + id + "_bypass")->setValueNotifyingHost(clipboardBand.bypassed ? 1.0f : 0.0f);
+    apvts.getParameter("b" + id + "_solo")->setValueNotifyingHost(clipboardBand.soloed ? 1.0f : 0.0f);
+}
+
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
     return new EeqProcessor();

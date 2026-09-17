@@ -804,6 +804,12 @@ void EeqEditor::mouseDown(const juce::MouseEvent& e)
             menu.addItem(102, "Dynamic EQ");
             menu.addSeparator();
             menu.addItem(200, "Delete Band");
+            menu.addSeparator();
+            menu.addItem(201, "Make Dynamic");
+            menu.addItem(202, "Invert Gain");
+            menu.addSeparator();
+            menu.addItem(203, "Copy Band");
+            menu.addItem(204, "Paste Band");
 
             menu.showMenuAsync(juce::PopupMenu::Options(), [this, hit](int result)
             {
@@ -844,6 +850,28 @@ void EeqEditor::mouseDown(const juce::MouseEvent& e)
                     apvts.getParameter("b" + id + "_active")->setValueNotifyingHost(0.0f);
                     bandVisuals[hit].active = false;
                     if (selectedBand == hit) selectBand(-1);
+                }
+                else if (result == 201)
+                {
+                    processor.pushUndoState();
+                    bool d = apvts.getRawParameterValue("b" + id + "_dyn")->load() > 0.5f;
+                    apvts.getParameter("b" + id + "_dyn")->setValueNotifyingHost(d ? 0.0f : 1.0f);
+                }
+                else if (result == 202)
+                {
+                    processor.pushUndoState();
+                    auto* gainParam = apvts.getParameter("b" + id + "_gain");
+                    float currentGain = gainParam->getValue();
+                    gainParam->setValueNotifyingHost(gainParam->convertTo0to1(-currentGain));
+                }
+                else if (result == 203)
+                {
+                    // Copy band
+                    processor.copyBandToClipboard(hit);
+                }
+                else if (result == 204)
+                {
+                    processor.pasteBandFromClipboard(hit);
                 }
             });
         }
