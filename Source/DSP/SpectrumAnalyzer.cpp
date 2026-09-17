@@ -159,10 +159,43 @@ void SpectrumAnalyzer::fftRadix2(float* real, float* imag, int n)
                 imag[odd] = imag[even] - tI;
                 real[even] += tR;
                 imag[even] += tI;
-                float newR = curR * wR - curI * wI;
-                curI = curR * wI + curI * wR;
-                curR = newR;
             }
+            float newR = curR * wR - curI * wI;
+            curI = curR * wI + curI * wR;
+            curR = newR;
         }
     }
+}
+
+void SpectrumAnalyzer::setExternalSpectrum(const std::array<float, MAX_BINS>& external, int bins)
+{
+    int copyBins = std::min(bins, MAX_BINS);
+    for (int i = 0; i < copyBins; ++i)
+        externalSpectrum[i] = external[i];
+    hasExternal = true;
+}
+
+void SpectrumAnalyzer::clearExternalSpectrum()
+{
+    externalSpectrum.fill(0.0f);
+    hasExternal = false;
+}
+
+std::array<float, MAX_BINS> SpectrumAnalyzer::getCollisionMask() const
+{
+    std::array<float, MAX_BINS> mask{};
+    mask.fill(0.0f);
+    
+    if (!hasExternal) return mask;
+    
+    for (int i = 0; i < numBins && i < MAX_BINS; ++i)
+    {
+        // Collision when both spectra have significant energy
+        float threshold = 0.3f; // 30% normalized threshold
+        if (spectrum[i] > threshold && externalSpectrum[i] > threshold)
+        {
+            mask[i] = std::min(spectrum[i], externalSpectrum[i]);
+        }
+    }
+    return mask;
 }

@@ -33,6 +33,13 @@ public:
     int getNumBins() const { return numBins; }
     float getSampleRate() const { return (float)fs; }
 
+    // External spectrum (for collision detection)
+    void setExternalSpectrum(const std::array<float, MAX_BINS>& external, int bins);
+    void clearExternalSpectrum();
+    bool hasExternalSpectrum() const { return hasExternal; }
+    const std::array<float, MAX_BINS>& getExternalSpectrum() const { return externalSpectrum; }
+    std::array<float, MAX_BINS> getCollisionMask() const; // Returns 1.0 where both spectra overlap significantly
+
     // EQ Match
     void startCapture() { captureActive = true; captureSpectrum.fill(0.0f); captureCount = 0; }
     void stopCapture() { captureActive = false; }
@@ -52,11 +59,13 @@ private:
 
     std::array<float, MAX_FFT_SIZE * 2> fftBuffer{};
     std::array<float, MAX_BINS> spectrum{};
+    std::array<float, MAX_BINS> externalSpectrum{};
     int writePos = 0;
     float decayRate = 0.85f;
     float dbRange = 90.0f;
     float tiltDB = 4.5f;
     bool frozen = false;
+    bool hasExternal = false;
 
     // EQ Match capture
     bool captureActive = false;
