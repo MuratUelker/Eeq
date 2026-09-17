@@ -60,6 +60,7 @@ private:
     bool dragging = false;
     bool fullScreen = false;
     juce::Rectangle<int> previousBounds;
+    bool pianoScale = false;
     bool spectrumGrabbing = false;
     float spectrumGrabFreq = 0.0f;
     float spectrumGrabGain = 0.0f;
@@ -84,6 +85,7 @@ private:
     juce::TextButton undoBtn{"Undo"};
     juce::TextButton redoBtn{"Redo"};
     juce::ToggleButton fullScreenBtn{"FS"};
+    juce::ToggleButton pianoScaleBtn{"Piano"};
 
     // === Floating band controls (Pro-Q3 style) ===
     juce::ToggleButton bandBypassBtn{"B"};

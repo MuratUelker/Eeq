@@ -123,6 +123,11 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     addAndMakeVisible(fullScreenBtn);
     fullScreenBtn.addListener(this);
 
+    pianoScaleBtn.setButtonText("Piano");
+    pianoScaleBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFa0a0c0));
+    addAndMakeVisible(pianoScaleBtn);
+    pianoScaleBtn.addListener(this);
+
     // === Floating band controls ===
 
     // Bypass
@@ -1063,6 +1068,21 @@ void EeqEditor::buttonClicked(juce::Button* btn)
         if (fullScreen)
         {
             previousBounds = getBounds();
+        }
+    }
+    else if (btn == &pianoScaleBtn)
+    {
+        pianoScale = !pianoScale;
+        pianoScaleBtn.setToggleState(pianoScale, juce::dontSendNotification);
+        repaint();
+    }
+    else if (btn == &fullScreenBtn)
+    {
+        fullScreen = !fullScreen;
+        fullScreenBtn.setToggleState(fullScreen, juce::dontSendNotification);
+        if (fullScreen)
+        {
+            previousBounds = getBounds();
             auto* display = juce::Desktop::getInstance().getDisplays().getPrimaryDisplay();
             if (display != nullptr)
                 setBounds(display->totalArea);
@@ -1525,6 +1545,21 @@ void EeqEditor::drawPianoRoll(juce::Graphics& g, juce::Rectangle<float> d)
             g.setFont(makeFont(7.0f));
             g.drawText("C" + juce::String(octave), x1 + 1, d.getY() + 1, 20, 10, juce::Justification::centredLeft);
         }
+
+        // Show frequency labels when piano scale is enabled
+        if (pianoScale && (x2 - x1) > 20)
+        {
+            float freq = midiKeyToFreq(key);
+            juce::String freqText;
+            if (freq >= 1000.0f)
+                freqText = juce::String(freq / 1000.0f, 1) + "k";
+            else
+                freqText = juce::String((int)freq);
+
+            g.setColour(juce::Colour(0xFF8a8aae).withAlpha(0.7f));
+            g.setFont(makeFont(6.0f));
+            g.drawText(freqText, x1 + 1, d.getY() + d.getHeight() - 10, (int)(x2 - x1) - 2, 10, juce::Justification::centred);
+        }
     }
 }
 
@@ -1597,6 +1632,8 @@ void EeqEditor::resized()
     eqMatchApplyBtn.setBounds(x, topBar.getY() + 6, 42, 24);
     x += 48;
     midiLearnBtn.setBounds(x, topBar.getY() + 6, 36, 24);
+    x += 40;
+    pianoScaleBtn.setBounds(x, topBar.getY() + 6, 42, 24);
 
     undoBtn.setBounds(topBar.getRight() - 120, topBar.getY() + 6, 36, 24);
     redoBtn.setBounds(topBar.getRight() - 80, topBar.getY() + 6, 36, 24);
@@ -1676,6 +1713,7 @@ void EeqEditor::resized()
     slopeBox.toFront(true);
     phaseInvertBtn.toFront(true);
     midiLearnBtn.toFront(true);
+    pianoScaleBtn.toFront(true);
 }
 
 // ===================== Presets =====================
