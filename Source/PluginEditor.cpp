@@ -381,6 +381,12 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     gainScaleLabel.setColour(juce::Label::textColourId, juce::Colour(0xFFa0a0c0));
     addAndMakeVisible(gainScaleLabel);
 
+    spectrumGrabLabel.setJustificationType(juce::Justification::centred);
+    spectrumGrabLabel.setFont(makeFont(9.0f));
+    spectrumGrabLabel.setColour(juce::Label::textColourId, juce::Colour(0xFFe94560));
+    addAndMakeVisible(spectrumGrabLabel);
+    spectrumGrabLabel.setVisible(false);
+
     // EQ Match
     eqMatchBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFa0a0c0));
     eqMatchBtn.setClickingTogglesState(true);
@@ -950,6 +956,16 @@ void EeqEditor::mouseDown(const juce::MouseEvent& e)
             spectrumGrabFreq = freq;
             spectrumGrabGain = curveMagDB;
             addBandAt(freq, curveMagDB);
+            
+            // Show frequency/note label
+            int note = freqToMidiKey(freq);
+            float noteFreq = midiKeyToFreq(note);
+            int cents = (int)std::round(1200.0f * std::log2(freq / noteFreq));
+            juce::String noteNames[12] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
+            juce::String noteName = noteNames[note % 12] + juce::String(note / 12 - 1);
+            juce::String centsStr = (cents >= 0 ? "+" : "") + juce::String(cents);
+            spectrumGrabLabel.setText("Grab: " + juce::String(freq, 1) + " Hz (" + noteName + " " + centsStr + "¢)", juce::dontSendNotification);
+            spectrumGrabLabel.setVisible(true);
         }
         else
         {
@@ -962,6 +978,19 @@ void EeqEditor::mouseDrag(const juce::MouseEvent& e)
 {
     if (spectrumGrabbing && selectedBand >= 0)
     {
+        auto display = getDisplayBounds();
+        float freq = xToFreq(e.position.x, display);
+        
+        // Update frequency/note label during drag
+        int note = freqToMidiKey(freq);
+        float noteFreq = midiKeyToFreq(note);
+        int cents = (int)std::round(1200.0f * std::log2(freq / noteFreq));
+        juce::String noteNames[12] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
+        juce::String noteName = noteNames[note % 12] + juce::String(note / 12 - 1);
+        int centsInt = cents;
+        juce::String centsStr = (centsInt >= 0 ? "+" : "") + juce::String(centsInt);
+        spectrumGrabLabel.setText("Grab: " + juce::String(freq, 1) + " Hz (" + noteName + " " + centsStr + "¢)", juce::dontSendNotification);
+        
         updateBandFromMouse(selectedBand, e.position.x, e.position.y);
         resized();
         return;
@@ -988,6 +1017,7 @@ void EeqEditor::mouseUp(const juce::MouseEvent&)
 {
     dragging = false;
     spectrumGrabbing = false;
+    spectrumGrabLabel.setVisible(false);
 }
 
 void EeqEditor::mouseDoubleClick(const juce::MouseEvent& e)
@@ -1727,6 +1757,8 @@ void EeqEditor::resized()
     midiLearnBtn.setBounds(x, topBar.getY() + 6, 36, 24);
     x += 40;
     pianoScaleBtn.setBounds(x, topBar.getY() + 6, 42, 24);
+    x += 44;
+    spectrumGrabLabel.setBounds(x, topBar.getY() + 6, 200, 24);
 
     undoBtn.setBounds(topBar.getRight() - 120, topBar.getY() + 6, 36, 24);
     redoBtn.setBounds(topBar.getRight() - 80, topBar.getY() + 6, 36, 24);
@@ -1810,6 +1842,7 @@ void EeqEditor::resized()
     midiLearnBtn.toFront(true);
     pianoScaleBtn.toFront(true);
     invertGainBtn.toFront(true);
+    spectrumGrabLabel.toFront(true);
 }
 
 // ===================== Presets =====================

@@ -116,6 +116,7 @@ private:
     juce::Label panLabel{"", "Pan"};
     juce::Slider gainScaleSlider;
     juce::Label gainScaleLabel{"", "Scale"};
+    juce::Label spectrumGrabLabel{"", "Grab: —"};
 
     // Output meter
     float outputLevelL = 0.0f, outputLevelR = 0.0f;
