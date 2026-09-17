@@ -48,7 +48,7 @@ public:
     static constexpr int NUM_BANDS = MAX_BANDS;
 
 private:
-    static constexpr int MAX_FILTERS_PER_BAND = 8;
+    static constexpr int MAX_FILTERS_PER_BAND = 16;
 
     std::array<std::array<BiquadFilter, MAX_FILTERS_PER_BAND>, MAX_BANDS> filterStages;
     std::array<BandState, MAX_BANDS> bands;

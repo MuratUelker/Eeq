@@ -46,7 +46,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout EeqProcessor::createLayout()
             juce::ParameterID{"b" + id + "_dynAuto", 1}, "Band " + id + " Auto Threshold", true));
         layout.add(std::make_unique<juce::AudioParameterChoice>(
             juce::ParameterID{"b" + id + "_slope", 1}, "Band " + id + " Slope",
-            juce::StringArray{"6 dB", "12 dB", "18 dB", "24 dB", "30 dB", "36 dB", "42 dB", "48 dB"}, 3));
+            juce::StringArray{"6 dB", "12 dB", "18 dB", "24 dB", "30 dB", "36 dB", "42 dB", "48 dB", "96 dB", "Brickwall"}, 3));
         layout.add(std::make_unique<juce::AudioParameterBool>(
             juce::ParameterID{"b" + id + "_sc", 1}, "Band " + id + " SC Trigger", false));
     }

@@ -83,11 +83,26 @@ enum class FilterSlope
     Slope30,
     Slope36,
     Slope42,
-    Slope48
+    Slope48,
+    Slope96,
+    Brickwall
 };
 
-inline int slopeToStages(FilterSlope s) { return ((int)s + 1); }
-inline float slopeToDB(FilterSlope s) { return 6.0f * ((int)s + 1); }
+inline int slopeToStages(FilterSlope s)
+{
+    int idx = (int)s;
+    if (idx == 8) return 16; // Slope96 = 16 stages
+    if (idx == 9) return 16; // Brickwall = 16 stages (or use FIR)
+    return idx + 1;
+}
+
+inline float slopeToDB(FilterSlope s)
+{
+    int idx = (int)s;
+    if (idx == 8) return 96.0f;
+    if (idx == 9) return 120.0f; // Brickwall effectively infinite
+    return 6.0f * (idx + 1);
+}
 
 struct BandState
 {

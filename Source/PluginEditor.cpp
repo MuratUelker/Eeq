@@ -10,7 +10,7 @@ static const juce::StringArray procModeNames = {"Zero Latency", "Natural Phase",
 static const juce::StringArray lpResolutionNames = {"Low (1024)", "Medium (2048)", "High (4096)", "Very High (8192)"};
 static const juce::StringArray analyzerNames = {"Pre", "Post", "Off"};
 
-const juce::StringArray EeqEditor::slopeNames = {"6 dB", "12 dB", "18 dB", "24 dB", "30 dB", "36 dB", "42 dB", "48 dB"};
+const juce::StringArray EeqEditor::slopeNames = {"6 dB", "12 dB", "18 dB", "24 dB", "30 dB", "36 dB", "42 dB", "48 dB", "96 dB", "Brickwall"};
 
 static const juce::StringArray factoryPresetNames = {
     "Init", "Vocal Presence", "De-Esser", "Guitar Bright", "Bass Tight",
