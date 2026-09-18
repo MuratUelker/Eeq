@@ -29,55 +29,55 @@ static const juce::StringArray factoryPresetNames = {
 
 static const std::vector<std::vector<float>> factoryPresets = {
     {1000, 0, 0.707f, 0, false},           // Init
-    {3000, 4, 1.5f, 0, true},              // Vocal Presence
-    {6000, -6, 3.0f, 0, true},             // De-Esser
-    {2000, 3, 1.0f, 1, true},              // Guitar Bright
-    {100, 3, 0.8f, 1, true},               // Bass Tight
-    {4000, 3, 0.5f, 0, true},              // Drum Smash
-    {10000, 2, 0.7f, 1, true},             // Master Bright
-    {200, 2, 0.8f, 1, true},               // Master Warm
-    {8000, -80, 0.7f, 4, true},            // Low Pass 8k
-    {80, -80, 0.7f, 3, true},              // High Pass 80
-    {12000, 3, 1.0f, 1, true},             // Vocal Air
-    {200, 2, 1.2f, 1, true},               // Vocal Body
-    {4000, 4, 2.0f, 0, true},              // Vocal Clarity
-    {150, 3, 1.0f, 1, true},               // Male Vocal
-    {300, 4, 1.5f, 1, true},               // Female Vocal
-    {80, -3, 0.7f, 3, true},               // Acoustic Guitar
-    {3000, 2, 1.5f, 0, true},              // Electric Guitar Rhythm
-    {2500, 6, 2.5f, 0, true},              // Electric Guitar Lead
-    {60, 4, 1.2f, 1, true},                // Bass Guitar
-    {60, 6, 2.0f, 0, true},                // Kick Drum
-    {200, 3, 1.5f, 1, true},               // Snare Drum
-    {10000, 2, 1.0f, 1, true},             // Overheads
-    {5000, 2, 1.0f, 1, true},              // Room Mic
-    {5000, 3, 1.5f, 1, true},              // Piano Bright
-    {3000, 2, 1.2f, 1, true},              // Piano Warm
-    {10000, 2, 0.8f, 1, true},             // Synth Pad
-    {3000, 4, 2.0f, 0, true},              // Synth Lead
-    {80, 4, 1.5f, 1, true},                // Synth Bass
-    {12000, 3, 1.2f, 1, true},             // Strings
-    {5000, 2, 1.0f, 1, true},              // Brass
-    {40, -6, 0.7f, 3, true},               // Low End Cleanup
-    {500, -4, 1.5f, 1, true},              // Mid Scoop
-    {8000, 3, 1.5f, 1, true},              // Presence Boost
-    {16000, 2, 0.7f, 1, true},             // Air Band
-    {1000, -2, 1.0f, 5, true},             // Tilt EQ
-    {800, -80, 0.7f, 3, true},             // Telephone Effect
-    {1000, 2, 2.0f, 0, true},              // Radio Voice
-    {2000, -6, 3.0f, 0, true},             // Lo-Fi
-    {200, 2, 0.8f, 1, true},               // Vintage Warmth
-    {10000, 1, 0.7f, 1, true},             // Modern Polish
-    {10000, 1, 1.0f, 1, true},             // Mastering Gentle
-    {60, 2, 1.0f, 1, true},                // Mastering Punch
-    {15000, 2, 0.7f, 1, true},             // Mastering Air
-    {2500, -4, 4.0f, 0, true},             // Corrective Cut
-    {1500, -8, 5.0f, 0, true},             // Problem Frequency
-    {80, -6, 2.0f, 0, true},               // Side Chain Duck
-    {500, 3, 1.0f, 2, true},               // Parallel EQ
-    {8000, 2, 1.5f, 2, true},              // M/S Width
-    {3000, 3, 2.0f, 4, true},              // M/S Focus
-    {10000, 1, 1.0f, 1, true},             // Linear Phase Master
+    {3000, 4, 1.5f, 0, true},              // Vocal Presence (bell)
+    {6000, -6, 3.0f, 0, true},             // De-Esser (bell)
+    {2000, 3, 1.0f, 2, true},              // Guitar Bright (high shelf)
+    {100, 3, 0.8f, 1, true},               // Bass Tight (low shelf)
+    {4000, 3, 0.5f, 0, true},              // Drum Smash (bell)
+    {10000, 2, 0.7f, 2, true},             // Master Bright (high shelf)
+    {200, 2, 0.8f, 1, true},               // Master Warm (low shelf)
+    {8000, 0, 0.7f, 4, true},              // Low Pass 8k (high cut)
+    {80, 0, 0.7f, 3, true},                // High Pass 80 (low cut)
+    {12000, 3, 1.0f, 2, true},             // Vocal Air (high shelf)
+    {200, 2, 1.2f, 1, true},               // Vocal Body (low shelf)
+    {4000, 4, 2.0f, 0, true},              // Vocal Clarity (bell)
+    {150, 3, 1.0f, 1, true},               // Male Vocal (low shelf)
+    {300, 4, 1.5f, 1, true},               // Female Vocal (low shelf)
+    {80, 0, 0.7f, 3, true},                // Acoustic Guitar (low cut)
+    {3000, 2, 1.5f, 0, true},              // Electric Guitar Rhythm (bell)
+    {2500, 6, 2.5f, 0, true},              // Electric Guitar Lead (bell)
+    {60, 4, 1.2f, 1, true},                // Bass Guitar (low shelf)
+    {60, 6, 2.0f, 0, true},                // Kick Drum (bell)
+    {200, 3, 1.5f, 1, true},               // Snare Drum (low shelf)
+    {10000, 2, 1.0f, 2, true},             // Overheads (high shelf)
+    {5000, 2, 1.0f, 2, true},              // Room Mic (high shelf)
+    {5000, 3, 1.5f, 2, true},              // Piano Bright (high shelf)
+    {3000, 2, 1.2f, 1, true},              // Piano Warm (low shelf)
+    {10000, 2, 0.8f, 2, true},             // Synth Pad (high shelf)
+    {3000, 4, 2.0f, 0, true},              // Synth Lead (bell)
+    {80, 4, 1.5f, 1, true},                // Synth Bass (low shelf)
+    {12000, 3, 1.2f, 2, true},             // Strings (high shelf)
+    {5000, 2, 1.0f, 2, true},              // Brass (high shelf)
+    {40, 0, 0.7f, 3, true},                // Low End Cleanup (low cut)
+    {500, -4, 1.5f, 0, true},              // Mid Scoop (bell)
+    {8000, 3, 1.5f, 2, true},              // Presence Boost (high shelf)
+    {16000, 2, 0.7f, 2, true},             // Air Band (high shelf)
+    {1000, -2, 1.0f, 7, true},             // Tilt EQ (flat tilt)
+    {300, 0, 0.707f, 3, true},             // Telephone Effect (low cut @300)
+    {1000, 2, 2.0f, 0, true},              // Radio Voice (bell)
+    {2000, -6, 3.0f, 0, true},             // Lo-Fi (bell)
+    {200, 2, 0.8f, 1, true},               // Vintage Warmth (low shelf)
+    {10000, 1, 0.7f, 2, true},             // Modern Polish (high shelf)
+    {10000, 1, 1.0f, 2, true},             // Mastering Gentle (high shelf)
+    {60, 2, 1.0f, 1, true},                // Mastering Punch (low shelf)
+    {15000, 2, 0.7f, 2, true},             // Mastering Air (high shelf)
+    {2500, -4, 4.0f, 0, true},             // Corrective Cut (bell)
+    {1500, -8, 5.0f, 0, true},             // Problem Frequency (bell)
+    {80, -6, 2.0f, 0, true},               // Side Chain Duck (bell)
+    {500, 3, 1.0f, 2, true},               // Parallel EQ (high shelf)
+    {8000, 2, 1.5f, 2, true},              // M/S Width (high shelf)
+    {3000, 3, 2.0f, 0, true},              // M/S Focus (bell)
+    {10000, 1, 1.0f, 2, true},             // Linear Phase Master (high shelf)
 };
 
 static juce::Font makeFont(float size)
@@ -98,19 +98,24 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     setResizeLimits(800, 550, 2400, 1400);
     setWantsKeyboardFocus(true);
     
+    // Tooltips for all controls
+    tooltipWindow.setMillisecondsBeforeTipAppears(400);
+    
     // High DPI / Retina support
     setResizeLimits(800, 550, 2400, 1400);
     setRepaintsOnMouseActivity(true);
 
     refreshPresetList();
-    presetSelector.setSelectedId(1);
+    presetSelector.setSelectedId(1, juce::dontSendNotification);
     presetSelector.setColour(juce::ComboBox::backgroundColourId, juce::Colour(0xFF16213e));
     presetSelector.setColour(juce::ComboBox::textColourId, juce::Colour(0xFFe0e0ff));
+    presetSelector.setTooltip("Select a preset");
     addAndMakeVisible(presetSelector);
     presetSelector.onChange = [this] { loadPreset(presetSelector.getSelectedItemIndex()); };
 
     savePresetBtn.setColour(juce::TextButton::buttonColourId, juce::Colour(0xFF16213e));
     savePresetBtn.setColour(juce::TextButton::textColourOffId, juce::Colour(0xFFe94560));
+    savePresetBtn.setTooltip("Save the current settings as a new preset");
     addAndMakeVisible(savePresetBtn);
     savePresetBtn.onClick = [this] { showSavePresetDialog(); };
 
@@ -119,6 +124,7 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     procModeBox.setSelectedId(1);
     procModeBox.setColour(juce::ComboBox::backgroundColourId, juce::Colour(0xFF16213e));
     procModeBox.setColour(juce::ComboBox::textColourId, juce::Colour(0xFFe0e0ff));
+    procModeBox.setTooltip("Processing mode: Zero Latency / Natural Phase / Linear Phase");
     addAndMakeVisible(procModeBox);
     procModeBox.addListener(this);
 
@@ -127,6 +133,7 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     lpResolutionBox.setSelectedId(3); // High (4096) default
     lpResolutionBox.setColour(juce::ComboBox::backgroundColourId, juce::Colour(0xFF16213e));
     lpResolutionBox.setColour(juce::ComboBox::textColourId, juce::Colour(0xFFe0e0ff));
+    lpResolutionBox.setTooltip("Linear phase FFT resolution");
     addAndMakeVisible(lpResolutionBox);
     lpResolutionBox.addListener(this);
 
@@ -135,6 +142,7 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     npResolutionBox.setSelectedId(3); // High (4096) default
     npResolutionBox.setColour(juce::ComboBox::backgroundColourId, juce::Colour(0xFF16213e));
     npResolutionBox.setColour(juce::ComboBox::textColourId, juce::Colour(0xFFe0e0ff));
+    npResolutionBox.setTooltip("Natural phase FFT resolution");
     addAndMakeVisible(npResolutionBox);
     npResolutionBox.addListener(this);
 
@@ -143,6 +151,7 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     displayRangeBox.setSelectedId(4); // 30 dB default
     displayRangeBox.setColour(juce::ComboBox::backgroundColourId, juce::Colour(0xFF16213e));
     displayRangeBox.setColour(juce::ComboBox::textColourId, juce::Colour(0xFFe0e0ff));
+    displayRangeBox.setTooltip("Vertical zoom of the EQ display");
     addAndMakeVisible(displayRangeBox);
     displayRangeBox.addListener(this);
 
@@ -151,6 +160,7 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     analyzerMode.setSelectedId(1);
     analyzerMode.setColour(juce::ComboBox::backgroundColourId, juce::Colour(0xFF16213e));
     analyzerMode.setColour(juce::ComboBox::textColourId, juce::Colour(0xFFe0e0ff));
+    analyzerMode.setTooltip("Analyzer source: pre-EQ / post-EQ / off");
     addAndMakeVisible(analyzerMode);
     analyzerMode.addListener(this);
 
@@ -158,33 +168,40 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     instanceSelector.setSelectedId(1);
     instanceSelector.setColour(juce::ComboBox::backgroundColourId, juce::Colour(0xFF16213e));
     instanceSelector.setColour(juce::ComboBox::textColourId, juce::Colour(0xFFe0e0ff));
+    instanceSelector.setTooltip("Select which instance this panel controls");
     addAndMakeVisible(instanceSelector);
     instanceSelector.addListener(this);
 
     freezeBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFa0a0c0));
     freezeBtn.setClickingTogglesState(true);
+    freezeBtn.setTooltip("Freeze the spectrum analyzer display");
     addAndMakeVisible(freezeBtn);
     freezeBtn.addListener(this);
 
     abBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFe94560));
     abBtn.setClickingTogglesState(true);
+    abBtn.setTooltip("A/B compare two EQ settings");
     addAndMakeVisible(abBtn);
     abBtn.addListener(this);
 
     undoBtn.setColour(juce::TextButton::textColourOffId, juce::Colour(0xFFa0a0c0));
+    undoBtn.setTooltip("Undo the last change (Cmd+Z)");
     addAndMakeVisible(undoBtn);
     undoBtn.addListener(this);
 
     redoBtn.setColour(juce::TextButton::textColourOffId, juce::Colour(0xFFa0a0c0));
+    redoBtn.setTooltip("Redo the last undone change (Cmd+Shift+Z)");
     addAndMakeVisible(redoBtn);
     redoBtn.addListener(this);
 
     fullScreenBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFa0a0c0));
+    fullScreenBtn.setTooltip("Toggle full screen");
     addAndMakeVisible(fullScreenBtn);
     fullScreenBtn.addListener(this);
 
     pianoScaleBtn.setButtonText("Piano");
     pianoScaleBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFa0a0c0));
+    pianoScaleBtn.setTooltip("Show a piano keyboard scale on the frequency axis");
     addAndMakeVisible(pianoScaleBtn);
     pianoScaleBtn.addListener(this);
 
@@ -194,6 +211,7 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     bandBypassBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFa0a0c0));
     bandBypassBtn.setColour(juce::ToggleButton::tickColourId, juce::Colour(0xFFe94560));
     bandBypassBtn.setClickingTogglesState(true);
+    bandBypassBtn.setTooltip("Bypass / enable this EQ band");
     addAndMakeVisible(bandBypassBtn);
     bandBypassBtn.setVisible(false);
     bandBypassBtn.addListener(this);
@@ -204,6 +222,7 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     typeBox.setSelectedId(1);
     typeBox.setColour(juce::ComboBox::backgroundColourId, juce::Colour(0xFF1a1a2e));
     typeBox.setColour(juce::ComboBox::textColourId, juce::Colour(0xFFe0e0ff));
+    typeBox.setTooltip("Filter type for this EQ band");
     addAndMakeVisible(typeBox);
     typeBox.setVisible(false);
     typeBox.addListener(this);
@@ -214,45 +233,49 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     slopeBox.setSelectedId(4);
     slopeBox.setColour(juce::ComboBox::backgroundColourId, juce::Colour(0xFF1a1a2e));
     slopeBox.setColour(juce::ComboBox::textColourId, juce::Colour(0xFFe0e0ff));
+    slopeBox.setTooltip("Filter slope (for Low Cut / High Cut types)");
     addAndMakeVisible(slopeBox);
     slopeBox.setVisible(false);
     slopeBox.addListener(this);
 
     // Freq knob - modern UI: larger text box (80x16), visible Hz value
     freqSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
-    freqSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 80, 16);
+    freqSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 104, 22);
     freqSlider.setRange(20.0, 22000.0, 0.1);
     freqSlider.setTextValueSuffix(" Hz");
     freqSlider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xFFe94560));
     freqSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFFe94560));
     freqSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFffffff));
     freqSlider.setDoubleClickReturnValue(true, 1000.0);
+    freqSlider.setTooltip("Frequency of this EQ band (double-click to reset to 1 kHz)");
     addAndMakeVisible(freqSlider);
     freqSlider.setVisible(false);
     freqSlider.addListener(this);
 
     // Gain knob - modern UI: larger text box (80x16), visible dB value
     gainSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
-    gainSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 80, 16);
+    gainSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 104, 22);
     gainSlider.setRange(-30.0, 30.0, 0.01);
     gainSlider.setTextValueSuffix(" dB");
     gainSlider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xFF00b4d8));
     gainSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFF00b4d8));
     gainSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFffffff));
     gainSlider.setDoubleClickReturnValue(true, 0.0);
+    gainSlider.setTooltip("Gain of this EQ band in dB (double-click to reset to 0 dB)");
     addAndMakeVisible(gainSlider);
     gainSlider.setVisible(false);
     gainSlider.addListener(this);
 
     // Q knob - modern UI: larger text box (80x16), visible Q value
     qSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
-    qSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 80, 16);
+    qSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 104, 22);
     qSlider.setRange(0.1, 10.0, 0.01);
     qSlider.setSkewFactor(0.4);
     qSlider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xFF533483));
     qSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFF533483));
     qSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFffffff));
     qSlider.setDoubleClickReturnValue(true, 0.707);
+    qSlider.setTooltip("Q (bandwidth) of this EQ band (double-click to reset to 0.707)");
     addAndMakeVisible(qSlider);
     qSlider.setVisible(false);
     qSlider.addListener(this);
@@ -263,6 +286,7 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     channelModeBox.setSelectedId(1);
     channelModeBox.setColour(juce::ComboBox::backgroundColourId, juce::Colour(0xFF16213e));
     channelModeBox.setColour(juce::ComboBox::textColourId, juce::Colour(0xFFffffff));
+    channelModeBox.setTooltip("Which channel this band processes (Stereo / L / R / Mid / Side)");
     addAndMakeVisible(channelModeBox);
     channelModeBox.setVisible(false);
     channelModeBox.addListener(this);
@@ -272,6 +296,7 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     gainQBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFa0a0c0));
     gainQBtn.setColour(juce::ToggleButton::tickColourId, juce::Colour(0xFFe9c46a));
     gainQBtn.setClickingTogglesState(true);
+    gainQBtn.setTooltip("Toggle Gain-Q interaction (FabFilter style link)");
     addAndMakeVisible(gainQBtn);
     gainQBtn.setVisible(false);
     gainQBtn.addListener(this);
@@ -279,12 +304,14 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     // Prev / Next band - modern UI: larger text (12pt), hover/focus state
     prevBandBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFa0a0c0));
     prevBandBtn.setClickingTogglesState(false);
+    prevBandBtn.setTooltip("Select previous band");
     addAndMakeVisible(prevBandBtn);
     prevBandBtn.setVisible(false);
     prevBandBtn.addListener(this);
 
     nextBandBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFa0a0c0));
     nextBandBtn.setClickingTogglesState(false);
+    nextBandBtn.setTooltip("Select next band");
     addAndMakeVisible(nextBandBtn);
     nextBandBtn.setVisible(false);
     nextBandBtn.addListener(this);
@@ -305,7 +332,7 @@ EeqEditor::EeqEditor(EeqProcessor& p)
 
     // Dynamic EQ sliders - modern UI: larger text box (80x16), visible values
     dynRangeSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
-    dynRangeSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 80, 16);
+    dynRangeSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 104, 22);
     dynRangeSlider.setRange(-30.0, 30.0, 0.1);
     dynRangeSlider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xFF2a9d8f));
     dynRangeSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFF2a9d8f));
@@ -316,12 +343,13 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     dynRangeSlider.addListener(this);
 
     dynThreshSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
-    dynThreshSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 80, 16);
+    dynThreshSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 104, 22);
     dynThreshSlider.setRange(-60.0, 0.0, 0.1);
     dynThreshSlider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xFF2a9d8f));
     dynThreshSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFF2a9d8f));
     dynThreshSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFffffff));
     dynThreshSlider.setDoubleClickReturnValue(true, -20.0);
+    dynThreshSlider.setTooltip("Threshold level that triggers the dynamic EQ");
     addAndMakeVisible(dynThreshSlider);
     dynThreshSlider.setVisible(false);
     dynThreshSlider.addListener(this);
@@ -331,6 +359,7 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     dynAutoBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFF2a9d8f));
     dynAutoBtn.setClickingTogglesState(true);
     dynAutoBtn.setToggleState(true, juce::dontSendNotification);
+    dynAutoBtn.setTooltip("Auto-threshold: disable to set the threshold manually");
     addAndMakeVisible(dynAutoBtn);
     dynAutoBtn.setVisible(false);
     dynAutoBtn.addListener(this);
@@ -338,6 +367,7 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     scTriggerBtn.setButtonText("SC");
     scTriggerBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFf72585));
     scTriggerBtn.setClickingTogglesState(true);
+    scTriggerBtn.setTooltip("Use sidechain input to trigger the dynamic EQ");
     addAndMakeVisible(scTriggerBtn);
     scTriggerBtn.setVisible(false);
     scTriggerBtn.addListener(this);
@@ -345,6 +375,7 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     phaseInvertBtn.setButtonText("Ø");
     phaseInvertBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFe94560));
     phaseInvertBtn.setClickingTogglesState(true);
+    phaseInvertBtn.setTooltip("Invert the phase of this band");
     addAndMakeVisible(phaseInvertBtn);
     phaseInvertBtn.setVisible(false);
     phaseInvertBtn.addListener(this);
@@ -448,35 +479,39 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     // Undo history panel buttons - modern UI: larger text (12pt), hover/focus state
     addAndMakeVisible(deleteBandBtn);
     deleteBandBtn.setVisible(false);
+    deleteBandBtn.setTooltip("Delete this band");
     deleteBandBtn.addListener(this);
 
     // Invert Gain
     invertGainBtn.setButtonText("Inv");
     invertGainBtn.setColour(juce::TextButton::buttonColourId, juce::Colour(0xFF16213e));
     invertGainBtn.setColour(juce::TextButton::textColourOffId, juce::Colour(0xFFe94560));
+    invertGainBtn.setTooltip("Invert the gain of this band (boost becomes cut and vice versa)");
     addAndMakeVisible(invertGainBtn);
     invertGainBtn.setVisible(false);
     invertGainBtn.addListener(this);
 
     // Dynamic EQ row
     dynRangeSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
-    dynRangeSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 80, 16);
+    dynRangeSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 104, 22);
     dynRangeSlider.setRange(-30.0, 30.0, 0.1);
     dynRangeSlider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xFF2a9d8f));
     dynRangeSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFF2a9d8f));
     dynRangeSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFffffff));
     dynRangeSlider.setDoubleClickReturnValue(true, 0.0);
+    dynRangeSlider.setTooltip("Dynamic EQ range: how much the gain varies around its static value");
     addAndMakeVisible(dynRangeSlider);
     dynRangeSlider.setVisible(false);
     dynRangeSlider.addListener(this);
 
     dynThreshSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
-    dynThreshSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 80, 16);
+    dynThreshSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 104, 22);
     dynThreshSlider.setRange(-60.0, 0.0, 0.1);
     dynThreshSlider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xFF2a9d8f));
     dynThreshSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFF2a9d8f));
     dynThreshSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFffffff));
     dynThreshSlider.setDoubleClickReturnValue(true, -20.0);
+    dynThreshSlider.setTooltip("Threshold level that triggers the dynamic EQ");
     addAndMakeVisible(dynThreshSlider);
     dynThreshSlider.setVisible(false);
     dynThreshSlider.addListener(this);
@@ -485,6 +520,7 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     dynAutoBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFF2a9d8f));
     dynAutoBtn.setClickingTogglesState(true);
     dynAutoBtn.setToggleState(true, juce::dontSendNotification);
+    dynAutoBtn.setTooltip("Auto-threshold: disable to set the threshold manually");
     addAndMakeVisible(dynAutoBtn);
     dynAutoBtn.setVisible(false);
     dynAutoBtn.addListener(this);
@@ -492,6 +528,7 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     scTriggerBtn.setButtonText("SC");
     scTriggerBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFf72585));
     scTriggerBtn.setClickingTogglesState(true);
+    scTriggerBtn.setTooltip("Use sidechain input to trigger the dynamic EQ");
     addAndMakeVisible(scTriggerBtn);
     scTriggerBtn.setVisible(false);
     scTriggerBtn.addListener(this);
@@ -499,6 +536,7 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     phaseInvertBtn.setButtonText("Ø");
     phaseInvertBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFe94560));
     phaseInvertBtn.setClickingTogglesState(true);
+    phaseInvertBtn.setTooltip("Invert the phase of this band");
     addAndMakeVisible(phaseInvertBtn);
     phaseInvertBtn.setVisible(false);
     phaseInvertBtn.addListener(this);
@@ -506,11 +544,13 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     // === Bottom bar (global) ===
     phaseBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFe94560));
     phaseBtn.setClickingTogglesState(true);
+    phaseBtn.setTooltip("Global phase invert of the output");
     addAndMakeVisible(phaseBtn);
     phaseBtn.addListener(this);
 
     autoGainBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFa0a0c0));
     autoGainBtn.setToggleState(true, juce::dontSendNotification);
+    autoGainBtn.setTooltip("Compensate for gain changes introduced by the EQ curve");
     addAndMakeVisible(autoGainBtn);
     autoGainBtn.addListener(this);
 
@@ -521,11 +561,13 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     outputPanSlider.setColour(juce::Slider::trackColourId, juce::Colour(0xFF2a2a4a));
     outputPanSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFe0e0ff));
     outputPanSlider.setDoubleClickReturnValue(true, 0.0);
+    outputPanSlider.setTooltip("Global stereo pan of the output");
     addAndMakeVisible(outputPanSlider);
 
     panLabel.setJustificationType(juce::Justification::centred);
-    panLabel.setFont(makeFont(9.0f));
+    panLabel.setFont(makeFont(10.0f));
     panLabel.setColour(juce::Label::textColourId, juce::Colour(0xFFa0a0c0));
+    panLabel.setTooltip("Global stereo pan of the output");
     addAndMakeVisible(panLabel);
 
     gainScaleSlider.setSliderStyle(juce::Slider::LinearHorizontal);
@@ -535,15 +577,17 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     gainScaleSlider.setColour(juce::Slider::trackColourId, juce::Colour(0xFF2a2a4a));
     gainScaleSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFe0e0ff));
     gainScaleSlider.setDoubleClickReturnValue(true, 1.0);
+    gainScaleSlider.setTooltip("Global gain scale (multiplier applied to all band gains)");
     addAndMakeVisible(gainScaleSlider);
 
     gainScaleLabel.setJustificationType(juce::Justification::centred);
-    gainScaleLabel.setFont(makeFont(9.0f));
+    gainScaleLabel.setFont(makeFont(10.0f));
     gainScaleLabel.setColour(juce::Label::textColourId, juce::Colour(0xFFa0a0c0));
+    gainScaleLabel.setTooltip("Global gain scale (multiplier applied to all band gains)");
     addAndMakeVisible(gainScaleLabel);
 
     spectrumGrabLabel.setJustificationType(juce::Justification::centred);
-    spectrumGrabLabel.setFont(makeFont(9.0f));
+    spectrumGrabLabel.setFont(makeFont(11.0f));
     spectrumGrabLabel.setColour(juce::Label::textColourId, juce::Colour(0xFFe94560));
     addAndMakeVisible(spectrumGrabLabel);
     spectrumGrabLabel.setVisible(false);
@@ -551,6 +595,7 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     // Advanced Auto Gain
     autoGainAdvBtn.setButtonText("Adv");
     autoGainAdvBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFa0a0c0));
+    autoGainAdvBtn.setTooltip("Advanced auto-gain options");
     addAndMakeVisible(autoGainAdvBtn);
     autoGainAdvBtn.addListener(this);
 
@@ -561,11 +606,13 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     autoGainWeightSlider.setColour(juce::Slider::trackColourId, juce::Colour(0xFF2a2a4a));
     autoGainWeightSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFe0e0ff));
     autoGainWeightSlider.setDoubleClickReturnValue(true, 0.5);
+    autoGainWeightSlider.setTooltip("Weight of auto-gain compensation against the static gain");
     addAndMakeVisible(autoGainWeightSlider);
 
     autoGainWeightLabel.setJustificationType(juce::Justification::centred);
-    autoGainWeightLabel.setFont(makeFont(9.0f));
+    autoGainWeightLabel.setFont(makeFont(10.0f));
     autoGainWeightLabel.setColour(juce::Label::textColourId, juce::Colour(0xFFa0a0c0));
+    autoGainWeightLabel.setTooltip("Weight of auto-gain compensation against the static gain");
     addAndMakeVisible(autoGainWeightLabel);
 
     // EQ Match
@@ -577,12 +624,14 @@ EeqEditor::EeqEditor(EeqProcessor& p)
 
     eqMatchCaptureBtn.setColour(juce::TextButton::buttonColourId, juce::Colour(0xFF16213e));
     eqMatchCaptureBtn.setColour(juce::TextButton::textColourOffId, juce::Colour(0xFFe94560));
+    eqMatchCaptureBtn.setTooltip("Capture the current spectrum as the EQ match target");
     addAndMakeVisible(eqMatchCaptureBtn);
     eqMatchCaptureBtn.setVisible(false);
     eqMatchCaptureBtn.addListener(this);
 
     eqMatchApplyBtn.setColour(juce::TextButton::buttonColourId, juce::Colour(0xFF16213e));
     eqMatchApplyBtn.setColour(juce::TextButton::textColourOffId, juce::Colour(0xFF00b4d8));
+    eqMatchApplyBtn.setTooltip("Apply the matched EQ curve to the bands");
     addAndMakeVisible(eqMatchApplyBtn);
     eqMatchApplyBtn.setVisible(false);
     eqMatchApplyBtn.addListener(this);
@@ -591,6 +640,7 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     midiLearnBtn.setButtonText("MIDI");
     midiLearnBtn.setColour(juce::TextButton::buttonColourId, juce::Colour(0xFF16213e));
     midiLearnBtn.setColour(juce::TextButton::textColourOffId, juce::Colour(0xFFe94560));
+    midiLearnBtn.setTooltip("Learn a MIDI CC to control this instance");
     addAndMakeVisible(midiLearnBtn);
     midiLearnBtn.setVisible(false);
     midiLearnBtn.addListener(this);
@@ -598,11 +648,13 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     // Side panel toggles
     instPanelBtn.setClickingTogglesState(true);
     instPanelBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFa0a0c0));
+    instPanelBtn.setTooltip("Show / hide the instance list panel");
     addAndMakeVisible(instPanelBtn);
     instPanelBtn.addListener(this);
 
     undoPanelBtn.setClickingTogglesState(true);
     undoPanelBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFa0a0c0));
+    undoPanelBtn.setTooltip("Show / hide the undo history panel");
     addAndMakeVisible(undoPanelBtn);
     undoPanelBtn.addListener(this);
 
@@ -710,7 +762,31 @@ juce::Rectangle<float> EeqEditor::getDisplayBounds() const
     b.removeFromTop(36);
     b.removeFromBottom(24);
     b.removeFromBottom(40);
+    if (selectedBand >= 0)
+        b.removeFromBottom(getBandControlStripHeight());
     return b;
+}
+
+juce::Rectangle<float> EeqEditor::getBandControlStripBounds() const
+{
+    auto b = getLocalBounds().toFloat();
+    b = b.reduced(36, 0);
+    b.removeFromTop(36);
+    b.removeFromBottom(24);
+    b.removeFromBottom(40);
+    return b.removeFromBottom(getBandControlStripHeight());
+}
+
+float EeqEditor::getBandControlStripHeight() const
+{
+    if (selectedBand >= 0 && selectedBand < NUM_BANDS)
+    {
+        auto& apvts = processor.getAPVTS();
+        auto id = juce::String(selectedBand + 1);
+        bool dyn = apvts.getRawParameterValue("b" + id + "_dyn")->load() > 0.5f;
+        if (dyn) return 140.0f;
+    }
+    return 98.0f;
 }
 
 juce::Rectangle<float> EeqEditor::getMeterBounds() const
@@ -722,24 +798,7 @@ juce::Rectangle<float> EeqEditor::getMeterBounds() const
 juce::Rectangle<float> EeqEditor::getBandControlsBounds() const
 {
     if (selectedBand < 0) return {};
-
-    auto display = getDisplayBounds();
-    float panelW = 620.0f;
-    float panelH = 56.0f;
-    if (selectedBand >= 0)
-    {
-        auto& apvts = processor.getAPVTS();
-        auto id = juce::String(selectedBand + 1);
-        bool dyn = apvts.getRawParameterValue("b" + id + "_dyn")->load() > 0.5f;
-        if (dyn) panelH = 86.0f;
-    }
-
-    float bandX = bandVisuals[selectedBand].x;
-    float px = juce::jmax(display.getX() + 4.0f,
-                          juce::jmin(bandX - panelW * 0.5f, display.getRight() - panelW - 4.0f));
-    float py = display.getBottom() - panelH - 4.0f;
-
-    return { px, py, panelW, panelH };
+    return getBandControlStripBounds();
 }
 
 // ===================== Coordinate mapping =====================
@@ -1654,13 +1713,18 @@ void EeqEditor::paint(juce::Graphics& g)
     g.drawHorizontalLine(topBar.getBottom() - 1, (float)topBar.getX(), (float)topBar.getRight());
 
     g.setColour(juce::Colour(0xFFe94560));
-    g.setFont(makeBoldFont(16.0f));
-    g.drawText("EEQ", topBar.reduced(8, 0).removeFromLeft(40), juce::Justification::centredLeft);
-
+    g.setFont(makeBoldFont(20.0f));
+    g.drawText("EEQ", topBar.reduced(8, 0).removeFromLeft(48), juce::Justification::centredLeft);
     g.setColour(juce::Colour(0xFF6a6a8e));
-    g.drawText("PRESET", topBar.getX() + 58, topBar.getY() + 2, 40, 14, juce::Justification::centredRight);
-    g.drawText("MODE", topBar.getX() + 285, topBar.getY() + 2, 32, 14, juce::Justification::centredRight);
-    g.drawText("ANALYZER", topBar.getX() + 408, topBar.getY() + 2, 52, 14, juce::Justification::centredRight);
+    g.setFont(makeFont(9.0f));
+    g.drawText("PARAMETRIC EQ", topBar.getX() + 6, topBar.getY() + 20, 50, 12, juce::Justification::centredLeft);
+
+    // Current preset name (Pro-Q3 style, centered in the top bar)
+    g.setColour(juce::Colour(0xFFe9e9ef));
+    g.setFont(makeBoldFont(14.0f));
+    g.drawText(presetSelector.getText(),
+               topBar.getX() + 200, topBar.getY() + 2, topBar.getWidth() - 420, topBar.getHeight() - 4,
+               juce::Justification::centred);
 
     auto display = getDisplayBounds();
     drawGrid(g, display);
@@ -2040,6 +2104,32 @@ void EeqEditor::drawBandNodes(juce::Graphics& g, juce::Rectangle<float> d)
         {
             g.setColour(juce::Colours::white);
             g.drawEllipse(x - radius - 1, y - radius - 1, (radius + 1) * 2, (radius + 1) * 2, 1.5f);
+
+            // Pro-Q3 style big value readout above the selected node
+            juce::String freqLabel;
+            if (freq >= 1000.0f)
+                freqLabel = juce::String(freq / 1000.0f, 1) + "k";
+            else
+                freqLabel = juce::String((int)freq);
+            juce::String gainLabel = (gain >= 0 ? "+" : "") + juce::String(gain, 1) + " dB";
+            juce::String qLabel = "Q " + juce::String(q, 2);
+            juce::String readout = freqLabel + "  " + gainLabel + "  " + qLabel;
+
+            g.setFont(makeBoldFont(14.0f));
+            juce::GlyphArrangement gauge;
+            gauge.addCurtailedLineOfText(g.getCurrentFont(), readout, 0.0f, 0.0f, 1.0e9f, false);
+            float tw = gauge.getBoundingBox(0, gauge.getNumGlyphs(), true).getWidth();
+            float readoutX = x - tw * 0.5f;
+            float readoutY = y - radius - 28.0f;
+
+            // Background pill
+            g.setColour(juce::Colour(0xDD101020));
+            g.fillRoundedRectangle(readoutX - 8, readoutY - 2, tw + 16, 18, 6.0f);
+            g.setColour(col.withAlpha(0.5f));
+            g.drawRoundedRectangle(juce::Rectangle<float>(readoutX - 8, readoutY - 2, tw + 16, 18), 6.0f, 1.0f);
+
+            g.setColour(juce::Colour(0xFFf0f0ff));
+            g.drawText(readout, (int)readoutX, (int)readoutY, (int)tw, 16, juce::Justification::centred);
         }
 
         if (bandVisuals[i].bypassed)
@@ -2100,36 +2190,50 @@ void EeqEditor::drawBandControls(juce::Graphics& g, juce::Rectangle<float> displ
     auto panel = getBandControlsBounds();
     if (panel.isEmpty()) return;
 
-    // Draw semi-transparent background
-    g.setColour(juce::Colour(0xDD12121e));
-    g.fillRoundedRectangle(panel, 6.0f);
-    g.setColour(juce::Colour(0xFFe94560).withAlpha(0.4f));
-    g.drawRoundedRectangle(panel, 6.0f, 1.0f);
-
-    // Draw vertical connector line from band node to panel
-    if (selectedBand >= 0 && selectedBand < NUM_BANDS && bandVisuals[selectedBand].active)
-    {
-        float bandX = bandVisuals[selectedBand].x;
-        float bandY = bandVisuals[selectedBand].y;
-        g.setColour(juce::Colour(0xFFe94560).withAlpha(0.3f));
-        g.drawLine(bandX, bandY + qToRadius(0.707f), bandX, panel.getY(), 1.0f);
-    }
+    // Draw fixed strip background (Pro-Q3 style dark panel)
+    juce::ColourGradient panelGrad(juce::Colour(0xFF14141f), 0.0f, panel.getY(),
+                                   juce::Colour(0xFF0f0f1a), 0.0f, panel.getBottom(), false);
+    g.setGradientFill(panelGrad);
+    g.fillRoundedRectangle(panel, 8.0f);
+    g.setColour(juce::Colour(0xFF2a2a4a).withAlpha(0.8f));
+    g.drawRoundedRectangle(panel, 8.0f, 1.0f);
 
     auto col = bandColours[selectedBand % 24];
 
-    // Small colour indicator
+    // Colour accent bar at top of strip
     g.setColour(col);
-    g.fillRoundedRectangle(panel.getX() + 8, panel.getY() + 6, 4, panel.getHeight() - 12, 2.0f);
+    g.fillRoundedRectangle(panel.getX() + 10, panel.getY(), 64, 3, 2.0f);
 
-    // Labels above knobs (row 1)
-    float ly = panel.getY() + 4;
+    // Caption labels above controls (Pro-Q3 style small caps)
     g.setColour(juce::Colour(0xFF8a8aae));
-    g.setFont(makeFont(8.0f));
+    juce::Font capFont = makeFont(10.0f);
+    g.setFont(capFont);
 
-    // We don't draw text labels for knobs — the knobs have TextBoxBelow
-    // Just draw small labels for the combo boxes
-    auto typeArea = panel.reduced(0).removeFromTop(panel.getHeight());
-    (void)typeArea;
+    float labelTop = panel.getY() + 5.0f;
+    auto drawCap = [&](float x, const char* text, float w = 66.0f)
+    {
+        g.drawText(text, (int)x, (int)labelTop, (int)w, 12, juce::Justification::centred);
+    };
+
+    float lx = panel.getX() + 16.0f + 36.0f;
+    drawCap(lx, "TYPE", 96.0f);
+    lx += 104.0f;
+    drawCap(lx, "SLOPE", 56.0f);
+    lx += 62.0f;
+    drawCap(lx, "FREQUENCY", 66.0f);
+    lx += 104.0f;
+    drawCap(lx, "GAIN", 66.0f);
+    lx += 104.0f;
+    drawCap(lx, "Q", 66.0f);
+
+    // Dynamic row captions
+    if (dynRangeSlider.isVisible())
+    {
+        float l2 = panel.getX() + 16.0f;
+        drawCap(l2, "DYNAMIC RANGE");
+        l2 += 104.0f;
+        drawCap(l2, "THRESHOLD");
+    }
 }
 
 void EeqEditor::drawPianoRoll(juce::Graphics& g, juce::Rectangle<float> d)
@@ -2236,40 +2340,40 @@ void EeqEditor::resized()
 
     // Top bar
     int x = topBar.getX() + 48;
-    presetSelector.setBounds(x, topBar.getY() + 6, 130, 24);
-    savePresetBtn.setBounds(x + 135, topBar.getY() + 6, 32, 24);
-    x += 180;
-    procModeBox.setBounds(x, topBar.getY() + 6, 100, 24);
-    x += 108;
-    lpResolutionBox.setBounds(x, topBar.getY() + 6, 110, 24);
-    x += 118;
-    npResolutionBox.setBounds(x, topBar.getY() + 6, 110, 24);
-    x += 118;
-    displayRangeBox.setBounds(x, topBar.getY() + 6, 60, 24);
-    x += 68;
-    analyzerMode.setBounds(x, topBar.getY() + 6, 72, 24);
-    x += 80;
-    instanceSelector.setBounds(x, topBar.getY() + 6, 90, 24);
-    x += 98;
-    freezeBtn.setBounds(x, topBar.getY() + 6, 24, 24);
-    x += 32;
-    eqMatchBtn.setBounds(x, topBar.getY() + 6, 48, 24);
+    presetSelector.setBounds(x, topBar.getY() + 4, 140, 28);
+    savePresetBtn.setBounds(x + 145, topBar.getY() + 4, 36, 28);
+    x += 192;
+    procModeBox.setBounds(x, topBar.getY() + 4, 110, 28);
+    x += 120;
+    lpResolutionBox.setBounds(x, topBar.getY() + 4, 120, 28);
+    x += 130;
+    npResolutionBox.setBounds(x, topBar.getY() + 4, 120, 28);
+    x += 130;
+    displayRangeBox.setBounds(x, topBar.getY() + 4, 64, 28);
+    x += 74;
+    analyzerMode.setBounds(x, topBar.getY() + 4, 80, 28);
+    x += 90;
+    instanceSelector.setBounds(x, topBar.getY() + 4, 90, 28);
+    x += 100;
+    freezeBtn.setBounds(x, topBar.getY() + 4, 26, 28);
+    x += 34;
+    eqMatchBtn.setBounds(x, topBar.getY() + 4, 52, 28);
+    x += 62;
+    eqMatchCaptureBtn.setBounds(x, topBar.getY() + 4, 62, 28);
+    x += 72;
+    eqMatchApplyBtn.setBounds(x, topBar.getY() + 4, 46, 28);
     x += 56;
-    eqMatchCaptureBtn.setBounds(x, topBar.getY() + 6, 58, 24);
-    x += 64;
-    eqMatchApplyBtn.setBounds(x, topBar.getY() + 6, 42, 24);
+    midiLearnBtn.setBounds(x, topBar.getY() + 4, 40, 28);
     x += 48;
-    midiLearnBtn.setBounds(x, topBar.getY() + 6, 36, 24);
-    x += 40;
-    pianoScaleBtn.setBounds(x, topBar.getY() + 6, 42, 24);
-    x += 44;
-    spectrumGrabLabel.setBounds(x, topBar.getY() + 6, 200, 24);
+    pianoScaleBtn.setBounds(x, topBar.getY() + 4, 46, 28);
+    x += 54;
+    spectrumGrabLabel.setBounds(x, topBar.getY() + 4, 200, 28);
 
-    undoBtn.setBounds(topBar.getRight() - 148, topBar.getY() + 6, 36, 24);
-    redoBtn.setBounds(topBar.getRight() - 108, topBar.getY() + 6, 36, 24);
-    undoPanelBtn.setBounds(topBar.getRight() - 68, topBar.getY() + 6, 28, 24);
-    instPanelBtn.setBounds(topBar.getRight() - 36, topBar.getY() + 6, 28, 24);
-    abBtn.setBounds(topBar.getRight() - 4, topBar.getY() + 6, 24, 24);
+    undoBtn.setBounds(topBar.getRight() - 152, topBar.getY() + 4, 40, 28);
+    redoBtn.setBounds(topBar.getRight() - 108, topBar.getY() + 4, 40, 28);
+    undoPanelBtn.setBounds(topBar.getRight() - 64, topBar.getY() + 4, 32, 28);
+    instPanelBtn.setBounds(topBar.getRight() - 28, topBar.getY() + 4, 32, 28);
+    abBtn.setBounds(topBar.getRight() - 2, topBar.getY() + 4, 26, 28);
 
     // Side panels (Pro-Q3 style)
     const int panelW = 180;
@@ -2282,74 +2386,73 @@ void EeqEditor::resized()
 
     // Bottom bar (global only)
     int bx = bottomBar.getX() + 8;
-    int by = bottomBar.getY() + 8;
-    phaseBtn.setBounds(bx, by, 50, 22);
-    bx += 58;
-    autoGainBtn.setBounds(bx, by, 36, 22);
-    bx += 44;
-    panLabel.setBounds(bx, by - 2, 28, 10);
-    outputPanSlider.setBounds(bx, by + 10, 100, 14);
-    bx += 110;
-    gainScaleLabel.setBounds(bx, by - 2, 34, 10);
-    gainScaleSlider.setBounds(bx, by + 10, 100, 14);
-    bx += 110;
-    autoGainWeightLabel.setBounds(bx, by - 2, 34, 10);
-    autoGainWeightSlider.setBounds(bx, by + 10, 100, 14);
-    bx += 110;
-    autoGainAdvBtn.setBounds(bx, by, 26, 22);
-    bx += 30;
-    phaseBtn.setBounds(bx, by, 50, 22);
+    int by = bottomBar.getY() + 7;
+    autoGainBtn.setBounds(bx, by, 40, 26);
+    bx += 48;
+    panLabel.setBounds(bx, by, 28, 12);
+    outputPanSlider.setBounds(bx, by + 12, 100, 14);
+    bx += 108;
+    gainScaleLabel.setBounds(bx, by, 34, 12);
+    gainScaleSlider.setBounds(bx, by + 12, 100, 14);
+    bx += 108;
+    autoGainWeightLabel.setBounds(bx, by, 34, 12);
+    autoGainWeightSlider.setBounds(bx, by + 12, 100, 14);
+    bx += 108;
+    autoGainAdvBtn.setBounds(bx, by, 30, 26);
+    bx += 38;
+    phaseBtn.setBounds(bx, by, 56, 26);
 
-    // === Floating band controls layout ===
+    // === Fixed band controls strip (Pro-Q3 style) ===
     auto panel = getBandControlsBounds();
     if (!panel.isEmpty() && selectedBand >= 0)
     {
-        float px = panel.getX() + 18.0f;
-        float py = panel.getY() + 4.0f;
-        float knobW = 52.0f;
-        float knobH = 48.0f;
-        float knobPitch = 80.0f;
-        float smallBtn = 20.0f;
+        float px = panel.getX() + 16.0f;
+        float py = panel.getY() + 18.0f;
+        float knobW = 66.0f;
+        float knobH = 52.0f;
+        float knobPitch = 104.0f;
+        float smallBtn = 26.0f;
+        float comboH = 26.0f;
 
-        // Row 1: Bypass | Type | Slope | Freq | Gain | Q | Ch | GQ | Prev | # | Next | Del
+        // Row 1: Bypass | Type | Slope | Freq | Gain | Q | Ch | GQ | Prev | # | Next | Del | Inv
         bandBypassBtn.setBounds(px, py, smallBtn, smallBtn);
-        px += 24;
-        typeBox.setBounds(px, py, 68, smallBtn);
-        px += 72;
-        slopeBox.setBounds(px, py, 48, smallBtn);
-        px += 52;
-        freqSlider.setBounds(px, py - 2, knobW, knobH);
-        px += knobPitch;
-        gainSlider.setBounds(px, py - 2, knobW, knobH);
-        px += knobPitch;
-        qSlider.setBounds(px, py - 2, knobW, knobH);
-        px += knobPitch;
-        channelModeBox.setBounds(px, py, 56, smallBtn);
-        px += 60;
-        gainQBtn.setBounds(px, py, smallBtn, smallBtn);
-        px += 24;
-        prevBandBtn.setBounds(px, py + 2, 18, 16);
-        bandNumberLabel.setBounds(px + 20, py, 16, smallBtn);
-        nextBandBtn.setBounds(px + 38, py + 2, 18, 16);
+        px += smallBtn + 10;
+        typeBox.setBounds(px, py, 96, comboH);
+        px += 104;
+        slopeBox.setBounds(px, py, 56, comboH);
         px += 62;
+        freqSlider.setBounds(px, py - 4, knobW, knobH);
+        px += knobPitch;
+        gainSlider.setBounds(px, py - 4, knobW, knobH);
+        px += knobPitch;
+        qSlider.setBounds(px, py - 4, knobW, knobH);
+        px += knobPitch;
+        channelModeBox.setBounds(px, py, 70, comboH);
+        px += 78;
+        gainQBtn.setBounds(px, py, smallBtn, smallBtn);
+        px += smallBtn + 8;
+        prevBandBtn.setBounds(px, py + 4, 22, 20);
+        bandNumberLabel.setBounds(px + 24, py, 20, comboH);
+        nextBandBtn.setBounds(px + 46, py + 4, 22, 20);
+        px += 76;
         deleteBandBtn.setBounds(px, py, smallBtn, smallBtn);
-        px += 26;
+        px += smallBtn + 8;
         invertGainBtn.setBounds(px, py, smallBtn, smallBtn);
 
         // Row 2 (dynamic EQ): Range | Thresh | Auto | SC | Phase
         if (dynRangeSlider.isVisible())
         {
-            float dy = py + knobH - 2;
-            float d2 = panel.getX() + 18.0f;
-            dynRangeSlider.setBounds(d2, dy, knobW, knobH - 8);
+            float dy = panel.getY() + 72.0f;
+            float d2 = panel.getX() + 16.0f;
+            dynRangeSlider.setBounds(d2, dy - 4, knobW, 46.0f);
             d2 += knobPitch;
-            dynThreshSlider.setBounds(d2, dy, knobW, knobH - 8);
+            dynThreshSlider.setBounds(d2, dy - 4, knobW, 46.0f);
             d2 += knobPitch;
-            dynAutoBtn.setBounds(d2, dy + 8, 36, 18);
-            d2 += 40;
-            scTriggerBtn.setBounds(d2, dy + 8, 28, 18);
-            d2 += 32;
-            phaseInvertBtn.setBounds(d2, dy + 8, 24, 18);
+            dynAutoBtn.setBounds(d2, dy + 6, 46, 24);
+            d2 += 54;
+            scTriggerBtn.setBounds(d2, dy + 6, 40, 24);
+            d2 += 48;
+            phaseInvertBtn.setBounds(d2, dy + 6, 36, 24);
         }
     }
 
@@ -2597,12 +2700,12 @@ void InstanceListPanel::paint(juce::Graphics& g)
     g.drawRoundedRectangle(bounds.reduced(0.5f, 0.5f), 8.0f, 1.0f);
 
     g.setColour(juce::Colour(0xffe94560));
-    g.setFont(makeBoldFont(13));
-    g.drawText("Instance List", 6, 6, getWidth() - 12, 20, juce::Justification::left, false);
+    g.setFont(makeBoldFont(15));
+    g.drawText("Instance List", 6, 6, getWidth() - 12, 22, juce::Justification::left, false);
 
-    const auto rowsStart = 56;
+    const auto rowsStart = 58;
     const auto rowHeight = 24;
-    g.setFont(makeFont(12));
+    g.setFont(makeFont(13));
     for (size_t i = 0; i < instances.size(); ++i)
     {
         auto y = static_cast<int>(rowsStart + i * rowHeight);
@@ -2839,12 +2942,12 @@ void UndoHistoryPanel::paint(juce::Graphics& g)
     g.drawRoundedRectangle(bounds.reduced(0.5f, 0.5f), 8.0f, 1.0f);
 
     g.setColour(juce::Colour(0xffe94560));
-    g.setFont(makeBoldFont(13));
+    g.setFont(makeBoldFont(15));
     g.drawText("Undo History", 6, 6, getWidth() - 12, 20, juce::Justification::left, false);
 
     const auto rowsStart = 78;
     const auto rowHeight = 20;
-    g.setFont(makeFont(11));
+    g.setFont(makeFont(12));
     g.setColour(juce::Colour(0xffa9a9b5));
     for (size_t i = 0; i < history.size() && i < 7; ++i)
     {

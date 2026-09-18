@@ -270,6 +270,8 @@ private:
     juce::Rectangle<float> getPianoBounds() const;
     juce::Rectangle<float> getMeterBounds() const;
     juce::Rectangle<float> getBandControlsBounds() const;
+    juce::Rectangle<float> getBandControlStripBounds() const;
+    float getBandControlStripHeight() const;
 
     void loadPreset(int index);
     void refreshPresetList();
@@ -285,6 +287,7 @@ private:
     float midiKeyToFreq(int key) const;
 
     juce::OpenGLContext openGLContext;
+    juce::TooltipWindow tooltipWindow;
     bool useOpenGL = true;
 
     // === Collision Visual Overlay (for spectrum grab) ===
