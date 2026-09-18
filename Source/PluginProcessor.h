@@ -129,6 +129,9 @@ public:
     float getDisplayRange() const { return displayRange; }
     void setDisplayRange(float range) { displayRange = range; }
 
+    // Force-sync band state from APVTS into the DSP (used after preset loads / state changes)
+    void syncAllBandsToDSP();
+
     // Output meter
     float getOutputLevelL() const { return outputLevelL; }
     float getOutputLevelR() const { return outputLevelR; }

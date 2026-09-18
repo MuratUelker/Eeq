@@ -112,12 +112,13 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     presetSelector.setTooltip("Select a preset");
     addAndMakeVisible(presetSelector);
     presetSelector.onChange = [this] { loadPreset(presetSelector.getSelectedItemIndex()); };
+    presetSelector.onPopupSelection = [this](int itemId) { loadPresetById(itemId); };
 
     savePresetBtn.setColour(juce::TextButton::buttonColourId, juce::Colour(0xFF16213e));
     savePresetBtn.setColour(juce::TextButton::textColourOffId, juce::Colour(0xFFe94560));
     savePresetBtn.setTooltip("Save the current settings as a new preset");
     addAndMakeVisible(savePresetBtn);
-    savePresetBtn.onClick = [this] { showSavePresetDialog(); };
+    savePresetBtn.onClick = [this] { showPresetMenu(); };
 
     for (const auto& name : procModeNames)
         procModeBox.addItem(name, procModeBox.getNumItems() + 1);
@@ -659,9 +660,9 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     undoPanelBtn.addListener(this);
 
     instancePanel.setVisible(false);
-    addAndMakeVisible(instancePanel);
+    addChildComponent(instancePanel);
     historyPanel.setVisible(false);
-    addAndMakeVisible(historyPanel);
+    addChildComponent(historyPanel);
 
     startTimerHz(30);
 
@@ -2499,37 +2500,73 @@ void EeqEditor::refreshPresetList()
     }
 }
 
-void EeqEditor::showSavePresetDialog()
+void EeqEditor::showPresetMenu()
+{
+    juce::PopupMenu menu;
+
+    menu.addItem(1, "Save As...", true, false);
+    menu.addItem(2, "Delete Preset...", true, false);
+    menu.addSeparator();
+
+    juce::String currentName;
+    int selId = presetSelector.getSelectedId();
+    auto selectedText = presetSelector.getText();
+    if (selId > 0 && !selectedText.startsWith("Factory:") && !selectedText.startsWith("---"))
+        currentName = selectedText;
+    menu.addItem(3, "Overwrite \"" + currentName + "\"", currentName.isNotEmpty(), false);
+
+    menu.showMenuAsync(juce::PopupMenu::Options().withParentComponent(this),
+        juce::ModalCallbackFunction::create([this, currentName](int result)
+        {
+            if (result == 1)
+                savePresetToName(false, {});
+            else if (result == 2)
+                showDeletePresetConfirm(currentName);
+            else if (result == 3 && currentName.isNotEmpty())
+                showOverwriteConfirm(currentName);
+        }));
+}
+
+void EeqEditor::savePresetToName(bool overwriteExisting, const juce::String& existingName)
 {
     class PresetNameDialog : public juce::AlertWindow
     {
     public:
-        PresetNameDialog() : AlertWindow("Save Preset", "Enter preset name:", AlertWindow::NoIcon)
+        PresetNameDialog(const juce::String& initial) : AlertWindow("Save Preset", "Enter preset name:", AlertWindow::NoIcon)
         {
-            addTextEditor("name", "", "Preset name:");
+            addTextEditor("name", initial, "Preset name:");
             addButton("Save", 1, juce::KeyPress(juce::KeyPress::returnKey));
             addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
         }
-        
+
         juce::String getName() const { return getTextEditorContents("name"); }
     };
 
-    std::unique_ptr<PresetNameDialog> dialog(new PresetNameDialog());
-    dialog->enterModalState(true, juce::ModalCallbackFunction::create([this, dialog = dialog.get()](int result)
+    auto dialog = std::make_shared<PresetNameDialog>(existingName);
+    dialog->enterModalState(true, juce::ModalCallbackFunction::create([this, dialog, overwriteExisting, existingName](int result)
     {
-        if (result == 1 && dialog)
+        if (result == 1)
         {
             juce::String name = dialog->getName().trim();
             if (name.isNotEmpty())
             {
+                if (!overwriteExisting && name == "Init")
+                {
+                    juce::AlertWindow::showMessageBoxAsync(juce::MessageBoxIconType::WarningIcon,
+                        "Reserved Name", "\"Init\" is reserved for the factory default preset. Please choose a different name.", "OK", this);
+                    savePresetToName(false, name);
+                    return;
+                }
                 processor.saveUserPreset(name);
+                if (overwriteExisting && name != existingName)
+                    processor.deleteUserPreset(existingName);
                 refreshPresetList();
                 // Select the newly saved preset
-                for (int i = 1; i <= presetSelector.getNumItems(); ++i)
+                for (int i = 0; i < presetSelector.getNumItems(); ++i)
                 {
                     if (presetSelector.getItemText(i) == name)
                     {
-                        presetSelector.setSelectedId(i);
+                        presetSelector.setSelectedId(i + 1);
                         break;
                     }
                 }
@@ -2538,15 +2575,63 @@ void EeqEditor::showSavePresetDialog()
     }));
 }
 
+void EeqEditor::showOverwriteConfirm(const juce::String& name)
+{
+    juce::AlertWindow::showOkCancelBox(juce::MessageBoxIconType::WarningIcon,
+        "Overwrite Preset", "Overwrite preset \"" + name + "\" with the current settings?",
+        "Overwrite", "Cancel", this,
+        juce::ModalCallbackFunction::create([this, name](int result)
+        {
+            if (result == 1)
+                processor.saveUserPreset(name);
+        }));
+}
+
+void EeqEditor::showDeletePresetConfirm(const juce::String& name)
+{
+    if (name.isEmpty())
+    {
+        juce::AlertWindow::showMessageBoxAsync(juce::MessageBoxIconType::WarningIcon,
+            "Delete Preset", "Please select a user preset from the preset selector to delete it.", "OK", this);
+        return;
+    }
+    juce::AlertWindow::showOkCancelBox(juce::MessageBoxIconType::WarningIcon,
+        "Delete Preset", "Delete preset \"" + name + "\"? This cannot be undone.",
+        "Delete", "Cancel", this,
+        juce::ModalCallbackFunction::create([this, name](int result)
+        {
+            if (result == 1)
+            {
+                processor.deleteUserPreset(name);
+                refreshPresetList();
+            }
+        }));
+}
+
+void EeqEditor::loadPresetById(int itemId)
+{
+    if (itemId <= 0) return;
+    for (int i = 0; i < presetSelector.getNumItems(); ++i)
+    {
+        if (presetSelector.getItemId(i) == itemId)
+        {
+            loadPreset(i);
+            return;
+        }
+    }
+}
+
 void EeqEditor::loadPreset(int index)
 {
-    if (index < 0) return;
+    auto& apvts = processor.getAPVTS();
+    if (index < 0 || index >= presetSelector.getNumItems()) return;
 
-    // Check if it's a separator
-    auto text = presetSelector.getItemText(index + 1);
+    // getItemText counts only item entries (no separators/headers), and the
+    // first item is "Factory: Init". Factory presets are loaded by their index
+    // in factoryPresetNames because a separator may shift the mapping.
+    auto text = presetSelector.getItemText(index);
     if (text.startsWith("---") || text.startsWith("Factory:"))
     {
-        // Handle factory presets
         int factoryIndex = 0;
         for (const auto& name : factoryPresetNames)
         {
@@ -2560,8 +2645,12 @@ void EeqEditor::loadPreset(int index)
         return;
     }
 
+    if (text.isEmpty() || text.startsWith("---"))
+        return;
+
     // User preset
     processor.loadUserPreset(text);
+    processor.syncAllBandsToDSP();
     updateAllControlsFromProcessor();
 }
 
@@ -2578,6 +2667,15 @@ void EeqEditor::loadFactoryPreset(int index)
         auto id = juce::String(i + 1);
         if (index == 0)
         {
+            // Init: reset every band to its default (flat) values
+            apvts.getParameter("b" + id + "_freq")->setValueNotifyingHost(
+                apvts.getParameter("b" + id + "_freq")->convertTo0to1(1000.0f));
+            apvts.getParameter("b" + id + "_gain")->setValueNotifyingHost(
+                apvts.getParameter("b" + id + "_gain")->convertTo0to1(0.0f));
+            apvts.getParameter("b" + id + "_q")->setValueNotifyingHost(
+                apvts.getParameter("b" + id + "_q")->convertTo0to1(0.707f));
+            apvts.getParameter("b" + id + "_type")->setValueNotifyingHost(
+                apvts.getParameter("b" + id + "_type")->convertTo0to1(0));
             apvts.getParameter("b" + id + "_active")->setValueNotifyingHost(0.0f);
         }
         else if (i < (int)preset.size() / 5)
@@ -2600,6 +2698,7 @@ void EeqEditor::loadFactoryPreset(int index)
         }
     }
 
+    processor.syncAllBandsToDSP();
     selectBand(-1);
 }
 

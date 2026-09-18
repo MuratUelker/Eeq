@@ -231,41 +231,7 @@ void EeqProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuff
         }
     }
 
-    // Update EQ bands from APVTS
-    for (int i = 0; i < MAX_BANDS; ++i)
-    {
-        auto id = juce::String(i + 1);
-        BandState state;
-        state.freq = apvts.getRawParameterValue("b" + id + "_freq")->load();
-        state.gain = apvts.getRawParameterValue("b" + id + "_gain")->load();
-        state.q = apvts.getRawParameterValue("b" + id + "_q")->load();
-        int typeIdx = (int)apvts.getRawParameterValue("b" + id + "_type")->load();
-        state.active = apvts.getRawParameterValue("b" + id + "_active")->load() > 0.5f;
-        state.soloed = apvts.getRawParameterValue("b" + id + "_solo")->load() > 0.5f;
-        state.bypassed = apvts.getRawParameterValue("b" + id + "_bypass")->load() > 0.5f;
-        int chIdx = (int)apvts.getRawParameterValue("b" + id + "_ch")->load();
-        state.dynamic.enabled = apvts.getRawParameterValue("b" + id + "_dyn")->load() > 0.5f;
-        state.dynamic.dynamicRange = apvts.getRawParameterValue("b" + id + "_dynRange")->load();
-        state.dynamic.threshold = apvts.getRawParameterValue("b" + id + "_dynThresh")->load();
-        state.dynamic.autoThreshold = apvts.getRawParameterValue("b" + id + "_dynAuto")->load() > 0.5f;
-        state.dynamic.autoAttack = apvts.getRawParameterValue("b" + id + "_dynAutoAtk")->load() > 0.5f;
-        state.dynamic.autoRelease = apvts.getRawParameterValue("b" + id + "_dynAutoRel")->load() > 0.5f;
-        state.scTrigger = apvts.getRawParameterValue("b" + id + "_sc")->load() > 0.5f;
-        state.phaseInverted = apvts.getRawParameterValue("b" + id + "_phase")->load() > 0.5f;
-        int slopeIdx = (int)apvts.getRawParameterValue("b" + id + "_slope")->load();
-        state.slope = (FilterSlope)juce::jlimit(0, 7, slopeIdx);
-
-        FilterType types[] = {FilterType::Bell, FilterType::LowShelf, FilterType::HighShelf,
-                              FilterType::LowCut, FilterType::HighCut, FilterType::Notch,
-                              FilterType::BandPass, FilterType::FlatTilt, FilterType::TiltShelf};
-        state.type = types[typeIdx % 9];
-
-        ChannelMode modes[] = {ChannelMode::Stereo, ChannelMode::Left, ChannelMode::Right,
-                               ChannelMode::Mid, ChannelMode::Side};
-        state.channelMode = modes[chIdx % 5];
-
-        equalizer.setBand(i, state);
-    }
+    syncAllBandsToDSP();
 
     equalizer.setGainScale(gainScale);
 
@@ -508,6 +474,45 @@ EQSnapshot EeqProcessor::captureState()
     }
     s.gainScale = gainScale;
     return s;
+}
+
+void EeqProcessor::syncAllBandsToDSP()
+{
+    // Update EQ bands from APVTS
+    for (int i = 0; i < MAX_BANDS; ++i)
+    {
+        auto id = juce::String(i + 1);
+        BandState state;
+        state.freq = apvts.getRawParameterValue("b" + id + "_freq")->load();
+        state.gain = apvts.getRawParameterValue("b" + id + "_gain")->load();
+        state.q = apvts.getRawParameterValue("b" + id + "_q")->load();
+        int typeIdx = (int)apvts.getRawParameterValue("b" + id + "_type")->load();
+        state.active = apvts.getRawParameterValue("b" + id + "_active")->load() > 0.5f;
+        state.soloed = apvts.getRawParameterValue("b" + id + "_solo")->load() > 0.5f;
+        state.bypassed = apvts.getRawParameterValue("b" + id + "_bypass")->load() > 0.5f;
+        int chIdx = (int)apvts.getRawParameterValue("b" + id + "_ch")->load();
+        state.dynamic.enabled = apvts.getRawParameterValue("b" + id + "_dyn")->load() > 0.5f;
+        state.dynamic.dynamicRange = apvts.getRawParameterValue("b" + id + "_dynRange")->load();
+        state.dynamic.threshold = apvts.getRawParameterValue("b" + id + "_dynThresh")->load();
+        state.dynamic.autoThreshold = apvts.getRawParameterValue("b" + id + "_dynAuto")->load() > 0.5f;
+        state.dynamic.autoAttack = apvts.getRawParameterValue("b" + id + "_dynAutoAtk")->load() > 0.5f;
+        state.dynamic.autoRelease = apvts.getRawParameterValue("b" + id + "_dynAutoRel")->load() > 0.5f;
+        state.scTrigger = apvts.getRawParameterValue("b" + id + "_sc")->load() > 0.5f;
+        state.phaseInverted = apvts.getRawParameterValue("b" + id + "_phase")->load() > 0.5f;
+        int slopeIdx = (int)apvts.getRawParameterValue("b" + id + "_slope")->load();
+        state.slope = (FilterSlope)juce::jlimit(0, 7, slopeIdx);
+
+        FilterType types[] = {FilterType::Bell, FilterType::LowShelf, FilterType::HighShelf,
+                              FilterType::LowCut, FilterType::HighCut, FilterType::Notch,
+                              FilterType::BandPass, FilterType::FlatTilt, FilterType::TiltShelf};
+        state.type = types[typeIdx % 9];
+
+        ChannelMode modes[] = {ChannelMode::Stereo, ChannelMode::Left, ChannelMode::Right,
+                               ChannelMode::Mid, ChannelMode::Side};
+        state.channelMode = modes[chIdx % 5];
+
+        equalizer.setBand(i, state);
+    }
 }
 
 void EeqProcessor::applyState(const EQSnapshot& s)

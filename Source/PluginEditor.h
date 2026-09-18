@@ -3,6 +3,65 @@
 #include <juce_opengl/juce_opengl.h>
 #include "PluginProcessor.h"
 
+// ComboBox subclass that fires reload even when the same item is re-selected.
+// JUCE's stock ComboBox only fires onChange when the selected ID actually
+// changes, so re-picking the already-selected preset would never reload it.
+class ReloadableComboBox : public juce::ComboBox
+{
+public:
+    std::function<void(int itemId)> onPopupSelection;
+    bool popupVisible = false;
+
+    using juce::ComboBox::ComboBox;
+
+    void showPopup() override
+    {
+        if (popupVisible)
+            return;
+
+        popupVisible = true;
+
+        auto selectedId = getSelectedId();
+        juce::PopupMenu menu;
+        for (int i = 0; i < getNumItems(); ++i)
+        {
+            auto itemId = getItemId(i);
+            if (itemId != 0)
+                menu.addItem(itemId, getItemText(i), true, itemId == selectedId);
+        }
+
+        if (menu.getNumItems() > 0)
+        {
+            auto options = juce::PopupMenu::Options()
+                               .withTargetComponent(this)
+                               .withItemThatMustBeVisible(selectedId)
+                               .withInitiallySelectedItem(selectedId)
+                               .withMinimumWidth(getWidth())
+                               .withMaximumNumColumns(1)
+                               .withStandardItemHeight(26);
+            menu.showMenuAsync(options,
+                juce::ModalCallbackFunction::create([this](int result)
+                {
+                    popupVisible = false;
+                    hidePopup();
+                    if (result != 0)
+                    {
+                        setSelectedId(result, juce::dontSendNotification);
+                        if (onPopupSelection)
+                            onPopupSelection(result);
+                    }
+                }));
+        }
+        else
+        {
+            popupVisible = false;
+            hidePopup();
+        }
+    }
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ReloadableComboBox)
+};
+
 // === Instance List Panel ===
 class InstanceListPanel : public juce::Component, private juce::Button::Listener {
 public:
@@ -153,7 +212,7 @@ private:
     std::vector<int> multiSelectedBands;
 
     // === Top bar controls ===
-    juce::ComboBox presetSelector;
+    ReloadableComboBox presetSelector;
     juce::TextButton savePresetBtn{"Save"};
     juce::ComboBox procModeBox;
     juce::ComboBox lpResolutionBox;
@@ -274,8 +333,12 @@ private:
     float getBandControlStripHeight() const;
 
     void loadPreset(int index);
+    void loadPresetById(int itemId);
     void refreshPresetList();
-    void showSavePresetDialog();
+    void showPresetMenu();
+    void savePresetToName(bool overwriteExisting, const juce::String& existingName);
+    void showOverwriteConfirm(const juce::String& name);
+    void showDeletePresetConfirm(const juce::String& name);
     void loadFactoryPreset(int index);
     void updateAllControlsFromProcessor();
 
