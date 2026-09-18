@@ -118,13 +118,15 @@ juce::AudioProcessorValueTreeState::ParameterLayout EeqProcessor::createLayout()
 
 EeqProcessor::EeqProcessor()
     : AudioProcessor(BusesProperties()
+          // Stereo giriş/çıkış - Reaper ve diğer host'lar bu konfigürasyonu anlar
           .withInput("Input", juce::AudioChannelSet::stereo(), true)
           .withOutput("Output", juce::AudioChannelSet::stereo(), true)
           .withInput("Sidechain", juce::AudioChannelSet::stereo(), true)
-          .withInput("Input_51", juce::AudioChannelSet::create5point1(), true)
-          .withOutput("Output_51", juce::AudioChannelSet::create5point1(), true)
-          .withInput("Input_71", juce::AudioChannelSet::create7point1(), true)
-          .withOutput("Output_71", juce::AudioChannelSet::create7point1(), true)),
+          // 5.1/7.1 dışa açık (Reaper surround projeleri için)
+          .withInput("Input_51", juce::AudioChannelSet::disabled(), true)
+          .withOutput("Output_51", juce::AudioChannelSet::disabled(), true)
+          .withInput("Input_71", juce::AudioChannelSet::disabled(), true)
+          .withOutput("Output_71", juce::AudioChannelSet::disabled(), true)),
       apvts(*this, nullptr, juce::Identifier("EeqState"), createLayout())
 {
     loadStateFromFile();
@@ -265,8 +267,13 @@ void EeqProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuff
         equalizer.setNaturalPhaseResolution(npResolution);
     }
 
-    // Check for display range change
-    float newDisplayRange = apvts.getRawParameterValue("displayRange")->load();
+    // Check for display range change — convert normalized APVTS choice value
+    // (0.0-1.0 for AudioParameterChoice) to actual dB range (3.0/6.0/12.0/30.0)
+    float normalizedDisplayRange = apvts.getRawParameterValue("displayRange")->load();
+    float displayRanges[] = {3.0f, 6.0f, 12.0f, 30.0f};
+    int index = (int)std::round(normalizedDisplayRange * 3.0f); // 3 = numChoices-1
+    index = juce::jlimit(0, 3, index);
+    float newDisplayRange = displayRanges[index];
     if (std::abs(newDisplayRange - displayRange) > 0.01f)
     {
         displayRange = newDisplayRange;

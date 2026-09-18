@@ -149,7 +149,7 @@ EeqEditor::EeqEditor(EeqProcessor& p)
 
     for (const auto& name : displayRangeNames)
         displayRangeBox.addItem(name, displayRangeBox.getNumItems() + 1);
-    displayRangeBox.setSelectedId(4); // 30 dB default
+    displayRangeBox.setSelectedId(1); // 3 dB default (kullanıcı ile uyumlu)
     displayRangeBox.setColour(juce::ComboBox::backgroundColourId, juce::Colour(0xFF16213e));
     displayRangeBox.setColour(juce::ComboBox::textColourId, juce::Colour(0xFFe0e0ff));
     displayRangeBox.setTooltip("Vertical zoom of the EQ display");

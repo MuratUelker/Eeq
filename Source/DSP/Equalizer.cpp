@@ -111,7 +111,8 @@ void Equalizer::setBand(int index, const BandState& state)
     responseDirty = true;
     if (state.active)
     {
-        float scaledGain = state.gain * gainScale;
+        float gainDb = state.gain * 60.0f - 30.0f;
+        float scaledGain = gainDb * gainScale;
         bool isCutFilter = (state.type == FilterType::LowCut || state.type == FilterType::HighCut);
         int numStages = isCutFilter ? slopeToStages(state.slope) : 1;
 
@@ -159,12 +160,13 @@ void Equalizer::processMultiChannel(float** channels, int numChannels, int numSa
     for (int i = 0; i < MAX_BANDS; ++i)
         if (bands[i].soloed) { hasSolo = true; break; }
 
-    for (int i = 0; i < MAX_BANDS; ++i)
+for (int i = 0; i < MAX_BANDS; ++i)
     {
         if (!bands[i].active || bands[i].bypassed) continue;
         if (hasSolo && !bands[i].soloed) continue;
 
-        float effectiveGain = bands[i].gain * gainScale;
+        float gainDb = bands[i].gain * 60.0f - 30.0f;
+        float effectiveGain = gainDb * gainScale;
 
         if (bands[i].dynamic.enabled)
         {
@@ -187,10 +189,8 @@ void Equalizer::processMultiChannel(float** channels, int numChannels, int numSa
         int numStages = isCutFilter ? slopeToStages(bands[i].slope) : 1;
 
         for (int s = 0; s < numStages; ++s)
-        {
             // Update filter coefficients for this band
             filterStages[i][s].setParams(bands[i].freq, effectiveGain, bands[i].q, bands[i].type);
-        }
 
         // Process each channel based on channel mode
         for (int ch = 0; ch < numChannels; ++ch)
@@ -259,7 +259,8 @@ void Equalizer::process(float* left, float* right, int numSamples)
         if (!bands[i].active || bands[i].bypassed) continue;
         if (hasSolo && !bands[i].soloed) continue;
 
-        float effectiveGain = bands[i].gain * gainScale;
+        float gainDb = bands[i].gain * 60.0f - 30.0f;
+        float effectiveGain = gainDb * gainScale;
 
         if (bands[i].dynamic.enabled)
         {
@@ -582,7 +583,8 @@ void Equalizer::processLinearPhase(float* left, float* right, int numSamples)
         for (int i = 0; i < MAX_BANDS; ++i)
         {
             if (!bands[i].active || bands[i].bypassed) continue;
-            float effectiveGain = bands[i].gain * gainScale;
+            float gainDb = bands[i].gain * 60.0f - 30.0f;
+            float effectiveGain = gainDb * gainScale;
             bool isCutFilter = (bands[i].type == FilterType::LowCut || bands[i].type == FilterType::HighCut);
             int numStages = isCutFilter ? slopeToStages(bands[i].slope) : 1;
 
@@ -729,7 +731,8 @@ void Equalizer::processNaturalPhase(float* left, float* right, int numSamples)
         for (int i = 0; i < MAX_BANDS; ++i)
         {
             if (!bands[i].active || bands[i].bypassed) continue;
-            float effectiveGain = bands[i].gain * gainScale;
+            float gainDb = bands[i].gain * 60.0f - 30.0f;
+            float effectiveGain = gainDb * gainScale;
             bool isCutFilter = (bands[i].type == FilterType::LowCut || bands[i].type == FilterType::HighCut);
             int numStages = isCutFilter ? slopeToStages(bands[i].slope) : 1;
 
@@ -770,7 +773,8 @@ float Equalizer::getMagnitudeAtFreq(float freq) const
     {
         if (bands[i].active && !bands[i].bypassed)
         {
-            float scaledGain = bands[i].gain * gainScale;
+            float gainDb = bands[i].gain * 60.0f - 30.0f;
+            float scaledGain = gainDb * gainScale;
             bool isCutFilter = (bands[i].type == FilterType::LowCut || bands[i].type == FilterType::HighCut);
             int numStages = isCutFilter ? slopeToStages(bands[i].slope) : 1;
 
