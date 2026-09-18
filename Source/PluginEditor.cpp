@@ -1499,16 +1499,14 @@ void EeqEditor::comboBoxChanged(juce::ComboBox* box)
     }
     else if (box == &displayRangeBox)
     {
-        // Seek: processBlock re-syncs displayRange FROM APVTS every audio block
-        // (PluginProcessor.cpp ~267-270). Writing only the processor member made the
-        // next block snap the range back to the saved APVTS value, so the combo
-        // "did nothing". Write the APVTS parameter (canonical) so the value sticks.
-        float ranges[] = {3.0f, 6.0f, 12.0f, 30.0f};
+        // Write the APVTS parameter using the selected index (canonical way for choice params)
+        // This ensures the value sticks across sessions
         auto* param = processor.getAPVTS().getParameter("displayRange");
         if (param != nullptr)
-            param->setValueNotifyingHost(param->convertTo0to1(ranges[displayRangeBox.getSelectedId() - 1]));
-        else
-            processor.setDisplayRange(ranges[displayRangeBox.getSelectedId() - 1]);
+            param->setValueNotifyingHost(displayRangeBox.getSelectedId() - 1); // 0-based index
+        
+        // Also update the processor member directly for immediate display response
+        processor.setDisplayRange((float)displayRangeBox.getSelectedId());
     }
     else if (box == &instanceSelector)
     {
