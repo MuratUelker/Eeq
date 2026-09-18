@@ -3,6 +3,86 @@
 #include <juce_opengl/juce_opengl.h>
 #include "PluginProcessor.h"
 
+// === Instance List Panel ===
+class InstanceListPanel : public juce::Component, private juce::Button::Listener {
+public:
+    InstanceListPanel();
+    ~InstanceListPanel() override;
+
+    void paint(juce::Graphics&) override;
+    void resized() override;
+    void buttonClicked(juce::Button*) override;
+    void mouseDown(const juce::MouseEvent&) override;
+    void mouseDoubleClick(const juce::MouseEvent&) override;
+
+    // Instance management
+    void addInstance(const juce::String& name);
+    void removeInstance(int index);
+    void renameInstance(int index, const juce::String& newName);
+    void toggleVisibility(int index);
+    void setInstanceName(int index, const juce::String& name);
+    void syncWithProcessor(EeqProcessor& processor);
+
+    int getInstanceCount() const { return static_cast<int>(instances.size()); }
+    bool isVisible(int index) const { return index >= 0 && index < static_cast<int>(instances.size()) ? instances[static_cast<size_t>(index)].visible : false; }
+    void setCollision(int index, bool collision) { if (index >= 0 && index < static_cast<int>(instances.size())) instances[static_cast<size_t>(index)].collisionDetected = collision; repaint(); }
+    void setVisibleFromPanel(int index, bool vis);
+    void toggleCollision(int index);
+
+private:
+    struct InstanceRow {
+        int id = 0;
+        juce::String name;
+        bool visible = true;
+        bool collisionDetected = false;
+        float spectrumPeak = -100.0f;
+    };
+
+    std::vector<InstanceRow> instances;
+    int selectedInstance = -1;
+    juce::TextButton addBtn{"+ Add"};
+    juce::TextButton removeBtn{"- Remove"};
+    juce::Label instanceNameLabel{"", "Instance Name"};
+    juce::ComboBox instanceSelector;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(InstanceListPanel)
+};
+
+// === Undo History Panel ===
+class UndoHistoryPanel : public juce::Component, private juce::Button::Listener {
+public:
+    UndoHistoryPanel();
+    ~UndoHistoryPanel() override;
+
+    void paint(juce::Graphics&) override;
+    void resized() override;
+    void buttonClicked(juce::Button*) override;
+
+    // History management
+    void addHistoryItem(const juce::String& description);
+    void clearHistory();
+    void undo();
+    void redo();
+    bool canUndo() const { return !history.empty(); }
+    bool canRedo() const { return !redoStack.empty(); }
+    void updateLabel();
+
+private:
+    struct HistoryItem {
+        juce::String description;
+        int timestamp = 0;
+    };
+
+    std::deque<HistoryItem> history;
+    std::deque<HistoryItem> redoStack;
+    int maxHistorySize = 50;
+    juce::TextButton undoBtn{"Undo"};
+    juce::TextButton redoBtn{"Redo"};
+    juce::Label historyLabel{"", "History: Empty"};
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(UndoHistoryPanel)
+};
+
 class EeqEditor : public juce::AudioProcessorEditor,
                    public juce::Timer,
                    public juce::OpenGLRenderer,
@@ -87,6 +167,15 @@ private:
     juce::TextButton redoBtn{"Redo"};
     juce::ToggleButton fullScreenBtn{"FS"};
     juce::ToggleButton pianoScaleBtn{"Piano"};
+    juce::ToggleButton instPanelBtn{"Inst"};
+    juce::ToggleButton undoPanelBtn{"Hist"};
+
+    // === Side panels (Pro-Q3 style) ===
+    InstanceListPanel instancePanel;
+    UndoHistoryPanel historyPanel;
+    bool instPanelVisible = false;
+    bool undoPanelVisible = false;
+    int logTickCount = 0;
 
     // === Floating band controls (Pro-Q3 style) ===
     juce::ToggleButton bandBypassBtn{"B"};
@@ -198,5 +287,16 @@ private:
     juce::OpenGLContext openGLContext;
     bool useOpenGL = true;
 
+    // === Collision Visual Overlay (for spectrum grab) ===
+    struct CollisionOverlay {
+        std::array<float, 4096> redShading{};
+        bool active = false;
+        float peakFreq = 0.0f;
+        float peakGain = -100.0f;
+
+        void update(const std::array<float, 4096>& spectrum);
+    };
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(EeqEditor)
 };
+

@@ -3,6 +3,21 @@
 #include <vector>
 #include <algorithm>
 
+juce::File EeqProcessor::getLogFile()
+{
+    auto folder = juce::File::getSpecialLocation(juce::File::userHomeDirectory)
+                      .getChildFile("Library/Logs/Eeq");
+    folder.createDirectory();
+    return folder.getChildFile("Eeq.log");
+}
+
+void EeqProcessor::writeLog(const juce::String& message)
+{
+    juce::File logFile = getLogFile();
+    logFile.appendText(juce::Time::getCurrentTime().formatted("%Y-%m-%d %H:%M:%S")
+                       + "  " + message + "\n");
+}
+
 juce::String EeqProcessor::getBandParamId(int band, const juce::String& suffix) const
 {
     return "b" + juce::String(band + 1) + "_" + suffix;
@@ -135,6 +150,34 @@ void EeqProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
     scFilterR.prepare(sampleRate);
     undoStack.clear();
     redoStack.clear();
+
+    writeLog("=== Eeq startup ===");
+    writeLog("sampleRate=" + juce::String(sampleRate)
+             + " blockSize=" + juce::String(samplesPerBlock)
+             + " mode=" + juce::String((int)currentMode)
+             + " lpRes=" + juce::String((int)lpResolution)
+             + " npRes=" + juce::String((int)npResolution));
+    writeLog("fftSize=" + juce::String(spectrum.getNumBins() * 2)
+             + " numBins=" + juce::String(spectrum.getNumBins())
+             + " range=" + juce::String(displayRange)
+             + " gainScale=" + juce::String(gainScale));
+
+    juce::String activeBands;
+    for (int i = 0; i < MAX_BANDS; ++i)
+    {
+        auto id = juce::String(i + 1);
+        bool active = apvts.getRawParameterValue("b" + id + "_active")->load() > 0.5f;
+        if (active)
+        {
+            float f = apvts.getRawParameterValue("b" + id + "_freq")->load();
+            float g = apvts.getRawParameterValue("b" + id + "_gain")->load();
+            float q = apvts.getRawParameterValue("b" + id + "_q")->load();
+            activeBands += "\n  band " + id + ": freq=" + juce::String(f)
+                           + " gain=" + juce::String(g) + " q=" + juce::String(q);
+        }
+    }
+    writeLog(activeBands.isNotEmpty() ? ("activeBands:" + activeBands)
+                                      : "activeBands: none");
 }
 
 void EeqProcessor::releaseResources() {}
@@ -1023,6 +1066,34 @@ const juce::String& EeqProcessor::getInstanceName() const
 const std::vector<EeqProcessor::InstanceInfo*>& EeqProcessor::getVisibleInstances() const
 {
     return getInstanceList();
+}
+
+void EeqProcessor::detectCollision(const std::array<float, 4096>& spectrum)
+{
+    collisionData.peakFreq = -1.0f;
+    collisionData.peakGain = -100.0f;
+    collisionData.detected = false;
+
+    if (spectrum.size() != 4096 || !hasSpectrum()) return;
+
+    float maxPeak = -100.0f;
+    for (int i = 0; i < 4096; ++i) {
+        if (spectrum[i] > maxPeak) {
+            maxPeak = spectrum[i];
+            collisionData.peakFreq = static_cast<float>(i);
+            collisionData.peakGain = maxPeak;
+        }
+    }
+
+    // Threshold for collision detection (-60 dBFS)
+    if (maxPeak > -60.0f) {
+        collisionData.detected = true;
+    }
+}
+
+bool EeqProcessor::hasSpectrum() const
+{
+    return false;
 }
 
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()

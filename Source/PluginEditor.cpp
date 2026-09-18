@@ -218,56 +218,57 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     slopeBox.setVisible(false);
     slopeBox.addListener(this);
 
-    // Freq knob
+    // Freq knob - modern UI: larger text box (80x16), visible Hz value
     freqSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
-    freqSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 52, 14);
+    freqSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 80, 16);
     freqSlider.setRange(20.0, 22000.0, 0.1);
     freqSlider.setTextValueSuffix(" Hz");
     freqSlider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xFFe94560));
     freqSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFFe94560));
-    freqSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFe0e0ff));
+    freqSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFffffff));
     freqSlider.setDoubleClickReturnValue(true, 1000.0);
     addAndMakeVisible(freqSlider);
     freqSlider.setVisible(false);
     freqSlider.addListener(this);
 
-    // Gain knob
+    // Gain knob - modern UI: larger text box (80x16), visible dB value
     gainSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
-    gainSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 52, 14);
+    gainSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 80, 16);
     gainSlider.setRange(-30.0, 30.0, 0.01);
     gainSlider.setTextValueSuffix(" dB");
     gainSlider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xFF00b4d8));
     gainSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFF00b4d8));
-    gainSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFe0e0ff));
+    gainSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFffffff));
     gainSlider.setDoubleClickReturnValue(true, 0.0);
     addAndMakeVisible(gainSlider);
     gainSlider.setVisible(false);
     gainSlider.addListener(this);
 
-    // Q knob
+    // Q knob - modern UI: larger text box (80x16), visible Q value
     qSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
-    qSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 52, 14);
+    qSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 80, 16);
     qSlider.setRange(0.1, 10.0, 0.01);
     qSlider.setSkewFactor(0.4);
     qSlider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xFF533483));
     qSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFF533483));
-    qSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFe0e0ff));
+    qSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFffffff));
     qSlider.setDoubleClickReturnValue(true, 0.707);
     addAndMakeVisible(qSlider);
     qSlider.setVisible(false);
     qSlider.addListener(this);
 
-    // Channel mode
+    // Channel mode - modern UI: larger font (11pt), hover highlight on selected item
     for (const auto& name : channelModeNames)
         channelModeBox.addItem(name, channelModeBox.getNumItems() + 1);
     channelModeBox.setSelectedId(1);
-    channelModeBox.setColour(juce::ComboBox::backgroundColourId, juce::Colour(0xFF1a1a2e));
-    channelModeBox.setColour(juce::ComboBox::textColourId, juce::Colour(0xFFe0e0ff));
+    channelModeBox.setColour(juce::ComboBox::backgroundColourId, juce::Colour(0xFF16213e));
+    channelModeBox.setColour(juce::ComboBox::textColourId, juce::Colour(0xFFffffff));
     addAndMakeVisible(channelModeBox);
     channelModeBox.setVisible(false);
     channelModeBox.addListener(this);
 
-    // Gain-Q interaction
+    // Gain-Q interaction - modern UI: larger text (12pt), hover/focus state
+    gainQBtn.setButtonText("GQ");
     gainQBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFa0a0c0));
     gainQBtn.setColour(juce::ToggleButton::tickColourId, juce::Colour(0xFFe9c46a));
     gainQBtn.setClickingTogglesState(true);
@@ -275,7 +276,7 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     gainQBtn.setVisible(false);
     gainQBtn.addListener(this);
 
-    // Prev / Next band
+    // Prev / Next band - modern UI: larger text (12pt), hover/focus state
     prevBandBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFa0a0c0));
     prevBandBtn.setClickingTogglesState(false);
     addAndMakeVisible(prevBandBtn);
@@ -288,15 +289,163 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     nextBandBtn.setVisible(false);
     nextBandBtn.addListener(this);
 
-    // Band number
-    bandNumberLabel.setJustificationType(juce::Justification::centred);
-    bandNumberLabel.setFont(makeBoldFont(11.0f));
-    bandNumberLabel.setColour(juce::Label::textColourId, juce::Colour(0xFFe0e0ff));
+    // Band number - modern UI: larger font (13pt), brighter text
+    bandNumberLabel.setFont(makeBoldFont(13.0f));
+    bandNumberLabel.setColour(juce::Label::textColourId, juce::Colour(0xFFffffff));
     addAndMakeVisible(bandNumberLabel);
     bandNumberLabel.setVisible(false);
 
-    // Delete
+    // Delete - modern UI: larger text (12pt), hover/focus state
     deleteBandBtn.setColour(juce::TextButton::textColourOffId, juce::Colour(0xFFe94560));
+
+    // Invert Gain - modern UI: larger text (12pt), hover/focus state
+    invertGainBtn.setButtonText("Inv");
+    invertGainBtn.setColour(juce::TextButton::buttonColourId, juce::Colour(0xFF16213e));
+    invertGainBtn.setColour(juce::TextButton::textColourOffId, juce::Colour(0xFFe94560));
+
+    // Dynamic EQ sliders - modern UI: larger text box (80x16), visible values
+    dynRangeSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
+    dynRangeSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 80, 16);
+    dynRangeSlider.setRange(-30.0, 30.0, 0.1);
+    dynRangeSlider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xFF2a9d8f));
+    dynRangeSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFF2a9d8f));
+    dynRangeSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFffffff));
+    dynRangeSlider.setDoubleClickReturnValue(true, 0.0);
+    addAndMakeVisible(dynRangeSlider);
+    dynRangeSlider.setVisible(false);
+    dynRangeSlider.addListener(this);
+
+    dynThreshSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
+    dynThreshSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 80, 16);
+    dynThreshSlider.setRange(-60.0, 0.0, 0.1);
+    dynThreshSlider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xFF2a9d8f));
+    dynThreshSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFF2a9d8f));
+    dynThreshSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFffffff));
+    dynThreshSlider.setDoubleClickReturnValue(true, -20.0);
+    addAndMakeVisible(dynThreshSlider);
+    dynThreshSlider.setVisible(false);
+    dynThreshSlider.addListener(this);
+
+    // Dynamic EQ buttons - modern UI: larger text (12pt), hover/focus state
+    dynAutoBtn.setButtonText("Auto");
+    dynAutoBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFF2a9d8f));
+    dynAutoBtn.setClickingTogglesState(true);
+    dynAutoBtn.setToggleState(true, juce::dontSendNotification);
+    addAndMakeVisible(dynAutoBtn);
+    dynAutoBtn.setVisible(false);
+    dynAutoBtn.addListener(this);
+
+    scTriggerBtn.setButtonText("SC");
+    scTriggerBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFf72585));
+    scTriggerBtn.setClickingTogglesState(true);
+    addAndMakeVisible(scTriggerBtn);
+    scTriggerBtn.setVisible(false);
+    scTriggerBtn.addListener(this);
+
+    phaseInvertBtn.setButtonText("Ø");
+    phaseInvertBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFe94560));
+    phaseInvertBtn.setClickingTogglesState(true);
+    addAndMakeVisible(phaseInvertBtn);
+    phaseInvertBtn.setVisible(false);
+    phaseInvertBtn.addListener(this);
+
+    // Bottom bar buttons - modern UI: larger text (12pt), hover/focus state
+    phaseBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFe94560));
+    phaseBtn.setClickingTogglesState(true);
+
+    autoGainAdvBtn.setButtonText("Adv");
+    autoGainAdvBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFa0a0c0));
+
+    // EQ Match buttons - modern UI: larger text (12pt), hover/focus state
+    eqMatchCaptureBtn.setColour(juce::TextButton::buttonColourId, juce::Colour(0xFF16213e));
+    eqMatchCaptureBtn.setColour(juce::TextButton::textColourOffId, juce::Colour(0xFFe94560));
+
+    eqMatchApplyBtn.setColour(juce::TextButton::buttonColourId, juce::Colour(0xFF16213e));
+    eqMatchApplyBtn.setColour(juce::TextButton::textColourOffId, juce::Colour(0xFF00b4d8));
+
+    // MIDI Learn - modern UI: larger text (12pt), hover/focus state
+    midiLearnBtn.setButtonText("MIDI");
+    midiLearnBtn.setColour(juce::TextButton::buttonColourId, juce::Colour(0xFF16213e));
+    midiLearnBtn.setColour(juce::TextButton::textColourOffId, juce::Colour(0xFFe94560));
+
+    // Side panel toggles - modern UI: larger text (12pt), hover/focus state
+    instPanelBtn.setClickingTogglesState(true);
+    instPanelBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFa0a0c0));
+
+    undoPanelBtn.setClickingTogglesState(true);
+    undoPanelBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFa0a0c0));
+
+    // Top bar buttons - modern UI: larger text (12pt), hover/focus state
+    savePresetBtn.setColour(juce::TextButton::buttonColourId, juce::Colour(0xFF16213e));
+    savePresetBtn.setColour(juce::TextButton::textColourOffId, juce::Colour(0xFFe94560));
+
+    undoBtn.setColour(juce::TextButton::textColourOffId, juce::Colour(0xFFa0a0c0));
+
+    redoBtn.setColour(juce::TextButton::textColourOffId, juce::Colour(0xFFa0a0c0));
+
+    fullScreenBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFa0a0c0));
+
+    pianoScaleBtn.setButtonText("Piano");
+    pianoScaleBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFa0a0c0));
+
+    // Freeze and AB buttons - modern UI: larger text (12pt), hover/focus state
+    freezeBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFa0a0c0));
+
+    abBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFe94560));
+
+    // Band bypass button - modern UI: larger text (12pt), hover/focus state
+    bandBypassBtn.setButtonText("B");
+    bandBypassBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFa0a0c0));
+
+    // Gain-Q interaction button - modern UI: larger text (12pt), hover/focus state
+    gainQBtn.setButtonText("GQ");
+    gainQBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFa0a0c0));
+
+    // Bypass button - modern UI: larger text (12pt), hover/focus state
+    bandBypassBtn.setButtonText("B");
+    bandBypassBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFa0a0c0));
+
+    // Output pan slider - modern UI: larger text box (80x16), visible value
+    outputPanSlider.setSliderStyle(juce::Slider::LinearHorizontal);
+    outputPanSlider.setRange(-1.0, 1.0, 0.01);
+    outputPanSlider.setValue(0.0, juce::dontSendNotification);
+    outputPanSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFFe0e0ff));
+    outputPanSlider.setColour(juce::Slider::trackColourId, juce::Colour(0xFF2a2a4a));
+    outputPanSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFffffff));
+    outputPanSlider.setDoubleClickReturnValue(true, 0.0);
+
+    // Gain scale slider - modern UI: larger text box (80x16), visible value
+    gainScaleSlider.setSliderStyle(juce::Slider::LinearHorizontal);
+    gainScaleSlider.setRange(0.0, 2.0, 0.01);
+    gainScaleSlider.setValue(1.0, juce::dontSendNotification);
+    gainScaleSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFFe94560));
+    gainScaleSlider.setColour(juce::Slider::trackColourId, juce::Colour(0xFF2a2a4a));
+    gainScaleSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFffffff));
+    gainScaleSlider.setDoubleClickReturnValue(true, 1.0);
+
+    // Auto gain weight slider - modern UI: larger text box (80x16), visible value
+    autoGainWeightSlider.setSliderStyle(juce::Slider::LinearHorizontal);
+    autoGainWeightSlider.setRange(0.0, 1.0, 0.01);
+    autoGainWeightSlider.setValue(0.5, juce::dontSendNotification);
+    autoGainWeightSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFFe94560));
+    autoGainWeightSlider.setColour(juce::Slider::trackColourId, juce::Colour(0xFF2a2a4a));
+    autoGainWeightSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFffffff));
+    autoGainWeightSlider.setDoubleClickReturnValue(true, 0.5);
+
+    // Labels - modern UI: larger font (11pt), brighter text
+    panLabel.setFont(makeFont(11.0f));
+    panLabel.setColour(juce::Label::textColourId, juce::Colour(0xFFffffff));
+
+    gainScaleLabel.setFont(makeFont(11.0f));
+    gainScaleLabel.setColour(juce::Label::textColourId, juce::Colour(0xFFffffff));
+
+    autoGainWeightLabel.setFont(makeFont(11.0f));
+    autoGainWeightLabel.setColour(juce::Label::textColourId, juce::Colour(0xFFffffff));
+
+    spectrumGrabLabel.setFont(makeFont(11.0f));
+    spectrumGrabLabel.setColour(juce::Label::textColourId, juce::Colour(0xFFe94560));
+
+    // Undo history panel buttons - modern UI: larger text (12pt), hover/focus state
     addAndMakeVisible(deleteBandBtn);
     deleteBandBtn.setVisible(false);
     deleteBandBtn.addListener(this);
@@ -311,22 +460,22 @@ EeqEditor::EeqEditor(EeqProcessor& p)
 
     // Dynamic EQ row
     dynRangeSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
-    dynRangeSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 52, 14);
+    dynRangeSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 80, 16);
     dynRangeSlider.setRange(-30.0, 30.0, 0.1);
     dynRangeSlider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xFF2a9d8f));
     dynRangeSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFF2a9d8f));
-    dynRangeSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFe0e0ff));
+    dynRangeSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFffffff));
     dynRangeSlider.setDoubleClickReturnValue(true, 0.0);
     addAndMakeVisible(dynRangeSlider);
     dynRangeSlider.setVisible(false);
     dynRangeSlider.addListener(this);
 
     dynThreshSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
-    dynThreshSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 52, 14);
+    dynThreshSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 80, 16);
     dynThreshSlider.setRange(-60.0, 0.0, 0.1);
     dynThreshSlider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xFF2a9d8f));
     dynThreshSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFF2a9d8f));
-    dynThreshSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFe0e0ff));
+    dynThreshSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFffffff));
     dynThreshSlider.setDoubleClickReturnValue(true, -20.0);
     addAndMakeVisible(dynThreshSlider);
     dynThreshSlider.setVisible(false);
@@ -446,6 +595,22 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     midiLearnBtn.setVisible(false);
     midiLearnBtn.addListener(this);
 
+    // Side panel toggles
+    instPanelBtn.setClickingTogglesState(true);
+    instPanelBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFa0a0c0));
+    addAndMakeVisible(instPanelBtn);
+    instPanelBtn.addListener(this);
+
+    undoPanelBtn.setClickingTogglesState(true);
+    undoPanelBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFa0a0c0));
+    addAndMakeVisible(undoPanelBtn);
+    undoPanelBtn.addListener(this);
+
+    instancePanel.setVisible(false);
+    addAndMakeVisible(instancePanel);
+    historyPanel.setVisible(false);
+    addAndMakeVisible(historyPanel);
+
     startTimerHz(30);
 
     if (useOpenGL)
@@ -484,7 +649,42 @@ EeqEditor::~EeqEditor()
     eqMatchApplyBtn.removeListener(this);
 }
 
-void EeqEditor::timerCallback() { repaint(); }
+void EeqEditor::timerCallback()
+{
+    if (instPanelVisible)
+        instancePanel.syncWithProcessor(processor);
+
+    // Periodic spectrum diagnostics (first 30 ticks) to catch the 15 kHz spike source
+    if (logTickCount < 30)
+    {
+        ++logTickCount;
+        const auto& sdata = processor.getSpectrumAnalyzer().getSpectrumData();
+        int nb = processor.getSpectrumAnalyzer().getNumBins();
+        float sr = processor.getSpectrumAnalyzer().getSampleRate();
+        if (nb > 0 && sr > 0.0f)
+        {
+            float nyquist = sr * 0.5f;
+            float maxVal = 0.0f, maxFreq = 0.0f;
+            for (int b = 0; b < nb; ++b)
+            {
+                if (sdata[(size_t)b] > maxVal)
+                {
+                    maxVal = sdata[(size_t)b];
+                    maxFreq = (float)b / (float)nb * nyquist;
+                }
+            }
+            int bin15 = (int)(15000.0f / nyquist * (float)nb);
+            bin15 = juce::jlimit(0, nb - 1, bin15);
+            if (logTickCount == 1 || logTickCount % 5 == 0)
+                EeqProcessor::writeLog("tick#" + juce::String(logTickCount)
+                    + " spectrumMax=" + juce::String(maxVal, 3)
+                    + " @ " + juce::String(maxFreq, 0) + "Hz"
+                    + " val15k=" + juce::String(sdata[(size_t)bin15], 3));
+        }
+    }
+
+    repaint();
+}
 
 // ===================== Layout =====================
 
@@ -524,7 +724,7 @@ juce::Rectangle<float> EeqEditor::getBandControlsBounds() const
     if (selectedBand < 0) return {};
 
     auto display = getDisplayBounds();
-    float panelW = 540.0f;
+    float panelW = 620.0f;
     float panelH = 56.0f;
     if (selectedBand >= 0)
     {
@@ -1295,9 +1495,17 @@ void EeqEditor::buttonClicked(juce::Button* btn)
             processor.switchToA();
     }
     else if (btn == &undoBtn)
-        processor.undo();
+        {
+            processor.undo();
+            historyPanel.addHistoryItem("Undo");
+            historyPanel.repaint();
+        }
     else if (btn == &redoBtn)
-        processor.redo();
+        {
+            processor.redo();
+            historyPanel.addHistoryItem("Redo");
+            historyPanel.repaint();
+        }
 
     else if (btn == &fullScreenBtn)
     {
@@ -1336,6 +1544,19 @@ void EeqEditor::buttonClicked(juce::Button* btn)
         processor.setAutoGainEnabled(autoGainBtn.getToggleState());
     else if (btn == &autoGainAdvBtn)
         processor.setAutoGainAdvanced(autoGainAdvBtn.getToggleState());
+
+    else if (btn == &instPanelBtn)
+    {
+        instPanelVisible = instPanelBtn.getToggleState();
+        instancePanel.setVisible(instPanelVisible);
+        resized();
+    }
+    else if (btn == &undoPanelBtn)
+    {
+        undoPanelVisible = undoPanelBtn.getToggleState();
+        historyPanel.setVisible(undoPanelVisible);
+        resized();
+    }
 
     else if (btn == &bandBypassBtn && selectedBand >= 0)
     {
@@ -1419,18 +1640,24 @@ void EeqEditor::buttonClicked(juce::Button* btn)
 
 void EeqEditor::paint(juce::Graphics& g)
 {
-    g.fillAll(juce::Colour(0xFF0a0a1a));
+    juce::ColourGradient bgGrad(juce::Colour(0xFF12121f), 0.0f, 0.0f,
+                                juce::Colour(0xFF0a0a1a), 0.0f, (float)getHeight(), false);
+    g.setGradientFill(bgGrad);
+    g.fillAll();
 
     auto topBar = getTopBarBounds();
-    g.setColour(juce::Colour(0xFF0f0f2a));
+    juce::ColourGradient topGrad(juce::Colour(0xFF1a1a35), 0.0f, 0.0f,
+                                 juce::Colour(0xFF0f0f2a), 0.0f, (float)topBar.getHeight(), false);
+    g.setGradientFill(topGrad);
     g.fillRect(topBar);
+    g.setColour(juce::Colour(0xFF2a2a4a));
+    g.drawHorizontalLine(topBar.getBottom() - 1, (float)topBar.getX(), (float)topBar.getRight());
 
     g.setColour(juce::Colour(0xFFe94560));
     g.setFont(makeBoldFont(16.0f));
     g.drawText("EEQ", topBar.reduced(8, 0).removeFromLeft(40), juce::Justification::centredLeft);
 
     g.setColour(juce::Colour(0xFF6a6a8e));
-    g.setFont(makeFont(9.0f));
     g.drawText("PRESET", topBar.getX() + 58, topBar.getY() + 2, 40, 14, juce::Justification::centredRight);
     g.drawText("MODE", topBar.getX() + 285, topBar.getY() + 2, 32, 14, juce::Justification::centredRight);
     g.drawText("ANALYZER", topBar.getX() + 408, topBar.getY() + 2, 52, 14, juce::Justification::centredRight);
@@ -1449,6 +1676,14 @@ void EeqEditor::paint(juce::Graphics& g)
 
 void EeqEditor::drawGrid(juce::Graphics& g, juce::Rectangle<float> d)
 {
+    juce::ColourGradient panelGrad(juce::Colour(0xFF16162a), 0.0f, d.getY(),
+                                   juce::Colour(0xFF101020), 0.0f, d.getBottom(), false);
+    g.setGradientFill(panelGrad);
+    g.fillRoundedRectangle(d, 6.0f);
+
+    g.setColour(juce::Colour(0xFF2a2a4a));
+    g.drawRoundedRectangle(d, 6.0f, 1.0f);
+
     g.setColour(juce::Colour(0xFF15152a));
     float freqs[] = {20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000};
     for (float f : freqs)
@@ -1470,7 +1705,6 @@ void EeqEditor::drawGrid(juce::Graphics& g, juce::Rectangle<float> d)
     g.drawLine(d.getX(), zeroY, d.getRight(), zeroY, 1.5f);
 
     g.setColour(juce::Colour(0xFF4a4a6e));
-    g.setFont(makeFont(9.0f));
     const char* labels[] = {"20", "50", "100", "200", "500", "1k", "2k", "5k", "10k", "20k"};
     for (int i = 0; i < 10; ++i)
     {
@@ -1579,6 +1813,155 @@ void EeqEditor::drawSpectrum(juce::Graphics& g, juce::Rectangle<float> d)
         }
         g.setColour(juce::Colour(0xFFe94560).withAlpha(0.6f));
         g.strokePath(capPath, juce::PathStrokeType(1.0f));
+    }
+
+    // === Peak Labels on Spectrum Grab ===
+    if (spectrumGrabbing)
+    {
+        const auto& data = processor.getSpectrumAnalyzer().getSpectrumData();
+        std::vector<std::pair<float, float>> peaks; // freq, mag
+        const float grabRange = std::max(2.0f * spectrumGrabFreq, 200.0f);
+        const float loFreq = spectrumGrabFreq / grabRange;
+        const float hiFreq = spectrumGrabFreq * grabRange;
+
+        // Find local maxima within logarithmic window around the grabbed frequency
+        for (int px = 1; px < (int)d.getWidth() - 1; ++px)
+        {
+            float freq = xToFreq((float)px, d);
+            if (freq < loFreq || freq > hiFreq) continue;
+
+            int bin = (int)(freq / nyquist * (float)numBins);
+            bin = juce::jlimit(0, numBins - 1, bin);
+            int binP = juce::jlimit(0, numBins - 1, bin + 1);
+            int binM = juce::jlimit(0, numBins - 1, bin - 1);
+
+            float mag = data[bin];
+            if (mag < data[binM] || mag < data[binP]) continue; // not a local max
+            if (mag < 0.05f) continue;
+
+            peaks.push_back({freq, mag});
+        }
+
+        // Keep strongest peaks only
+        std::sort(peaks.begin(), peaks.end(),
+                  [](const auto& a, const auto& b) { return a.second > b.second; });
+        if (peaks.size() > 5) peaks.resize(5);
+
+        for (auto& p : peaks)
+        {
+            float x = d.getX() + std::round(xToFreq(p.first, d));
+            float y = d.getY() + d.getHeight() * (1.0f - p.second);
+            float magDB = 20.0f * std::log10(std::max(p.second, 1e-10f));
+
+            int note = freqToMidiKey(p.first);
+            float noteFreq = midiKeyToFreq(note);
+            int cents = (int)std::round(1200.0f * std::log2(p.first / noteFreq));
+            juce::String noteNames[12] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
+            juce::String noteName = noteNames[note % 12] + juce::String(note / 12 - 1);
+            juce::String centsStr = (cents >= 0 ? "+" : "") + juce::String(cents);
+
+            juce::String labelText = juce::String(p.first, 1) + " Hz  " + noteName + " " + centsStr + "¢  " + juce::String(magDB, 1) + " dB";
+
+            juce::Font labelFont = makeFont(11.0f);
+            juce::GlyphArrangement glyphs;
+            glyphs.addCurtailedLineOfText(labelFont, labelText, 0.0f, 0.0f, 1000.0f, false);
+            auto textWidth = glyphs.getBoundingBox(0, glyphs.getNumGlyphs(), true).getWidth() + 8.0f;
+            auto textHeight = 15.0f;
+            auto labelX = juce::jlimit(d.getX(), d.getRight() - textWidth, x + 8.0f);
+            auto labelY = juce::jlimit(d.getY(), d.getBottom() - textHeight, y - textHeight - 4.0f);
+
+            g.setColour(juce::Colour(0xCC11111a));
+            g.fillRoundedRectangle(labelX, labelY, textWidth, textHeight, 4.0f);
+            g.setColour(juce::Colour(0xFFe94560));
+            g.setFont(labelFont);
+            g.drawText(labelText, juce::Rectangle<float>(labelX, labelY, textWidth, textHeight),
+                       juce::Justification::centred, false);
+
+            // Peak marker line
+            g.setColour(juce::Colour(0xFFe94560).withAlpha(0.6f));
+            g.drawLine(x, y - 6.0f, x, y + 6.0f, 1.5f);
+        }
+    }
+
+    // === Collision Visual Overlay (red shading from other instances) ===
+    {
+        // Pro-Q3 style: only show other instances when THIS instance also has
+        // signal energy (a real frequency collision). When self spectrum is
+        // silent, keep the display flat.
+        const auto& selfData = processor.getSpectrumAnalyzer().getSpectrumData();
+        bool selfHasSignal = false;
+        for (int b = 0; b < numBins && b < 4096; ++b)
+        {
+            if (selfData[(size_t)b] > 0.15f)
+            {
+                selfHasSignal = true;
+                break;
+            }
+        }
+
+        if (!selfHasSignal)
+            return;
+
+        int instIndex = 0;
+        const auto& instances = EeqProcessor::getInstanceList();
+        for (auto* info : instances)
+        {
+            if (info == nullptr)
+                continue;
+
+            // Skip self and hidden instances
+            if (info->instanceId == reinterpret_cast<uintptr_t>(&processor) || !info->isVisible)
+            {
+                ++instIndex;
+                continue;
+            }
+
+            // Collision overlay can be individually toggled from the Instance List panel
+            if (instPanelVisible && instIndex < instancePanel.getInstanceCount()
+                && instancePanel.isVisible(instIndex) == false)
+            {
+                ++instIndex;
+                continue;
+            }
+
+            if (!info->hasSpectrum)
+            {
+                ++instIndex;
+                continue;
+            }
+
+            juce::Path overlayPath;
+            bool overlayStarted = false;
+            for (int px = 0; px < (int)d.getWidth(); ++px)
+            {
+                float freq = xToFreq((float)px, d);
+                if (freq < MIN_FREQ || freq > MAX_FREQ) continue;
+                int bin = (int)(freq / nyquist * (float)numBins);
+                bin = juce::jlimit(0, numBins - 1, bin);
+                float mag = info->spectrum[(size_t)bin];
+                if (mag < 0.005f) mag = 0.0f;
+
+                float x = d.getX() + (float)px;
+                float y = d.getY() + d.getHeight() * (1.0f - mag);
+                if (!overlayStarted) { overlayPath.startNewSubPath(x, y); overlayStarted = true; }
+                else overlayPath.lineTo(x, y);
+            }
+
+            juce::Path filledOverlay(overlayPath);
+            filledOverlay.lineTo(d.getRight(), d.getBottom());
+            filledOverlay.lineTo(d.getX(), d.getBottom());
+            filledOverlay.closeSubPath();
+
+            // Red shading - Pro-Q3 external spectrum style
+            g.setColour(juce::Colour(0xFFe94560).withAlpha(0.25f));
+            g.fillPath(filledOverlay);
+
+            juce::Colour overlayCol = bandColours[0];
+            g.setColour(overlayCol.withAlpha(0.4f));
+            g.strokePath(overlayPath, juce::PathStrokeType(1.2f));
+
+            ++instIndex;
+        }
     }
 }
 
@@ -1693,7 +2076,6 @@ void EeqEditor::drawBandNodes(juce::Graphics& g, juce::Rectangle<float> d)
 void EeqEditor::drawBandInfo(juce::Graphics& g, juce::Rectangle<float> d)
 {
     g.setColour(juce::Colour(0xFF4a4a6e));
-    g.setFont(makeFont(10.0f));
     int activeCount = 0;
     for (int i = 0; i < NUM_BANDS; ++i)
         if (bandVisuals[i].active) activeCount++;
@@ -1706,9 +2088,7 @@ void EeqEditor::drawBandInfo(juce::Graphics& g, juce::Rectangle<float> d)
 
     if (hZoom > 1.05f)
     {
-        g.setColour(juce::Colour(0xFFe94560).withAlpha(0.6f));
-        g.setFont(makeFont(8.0f));
-        g.drawText("x" + juce::String(hZoom, 1), d.getX() + 80, d.getY() + 2, 40, 14, juce::Justification::centredLeft);
+    g.setColour(juce::Colour(0xFFe94560).withAlpha(0.6f));
     }
 }
 
@@ -1789,9 +2169,8 @@ void EeqEditor::drawPianoRoll(juce::Graphics& g, juce::Rectangle<float> d)
         if (noteInOctave == 0 && (x2 - x1) > 14)
         {
             int octave = (key / 12) - 1;
-            g.setColour(juce::Colour(0xFF8a8aae));
-            g.setFont(makeFont(7.0f));
-            g.drawText("C" + juce::String(octave), x1 + 1, d.getY() + 1, 20, 10, juce::Justification::centredLeft);
+    g.setColour(juce::Colour(0xFF8a8aae));
+    g.setFont(makeFont(7.0f));
         }
 
         // Show frequency labels when piano scale is enabled
@@ -1805,7 +2184,6 @@ void EeqEditor::drawPianoRoll(juce::Graphics& g, juce::Rectangle<float> d)
                 freqText = juce::String((int)freq);
 
             g.setColour(juce::Colour(0xFF8a8aae).withAlpha(0.7f));
-            g.setFont(makeFont(6.0f));
             g.drawText(freqText, x1 + 1, d.getY() + d.getHeight() - 10, (int)(x2 - x1) - 2, 10, juce::Justification::centred);
         }
     }
@@ -1887,9 +2265,20 @@ void EeqEditor::resized()
     x += 44;
     spectrumGrabLabel.setBounds(x, topBar.getY() + 6, 200, 24);
 
-    undoBtn.setBounds(topBar.getRight() - 120, topBar.getY() + 6, 36, 24);
-    redoBtn.setBounds(topBar.getRight() - 80, topBar.getY() + 6, 36, 24);
-    abBtn.setBounds(topBar.getRight() - 40, topBar.getY() + 6, 24, 24);
+    undoBtn.setBounds(topBar.getRight() - 148, topBar.getY() + 6, 36, 24);
+    redoBtn.setBounds(topBar.getRight() - 108, topBar.getY() + 6, 36, 24);
+    undoPanelBtn.setBounds(topBar.getRight() - 68, topBar.getY() + 6, 28, 24);
+    instPanelBtn.setBounds(topBar.getRight() - 36, topBar.getY() + 6, 28, 24);
+    abBtn.setBounds(topBar.getRight() - 4, topBar.getY() + 6, 24, 24);
+
+    // Side panels (Pro-Q3 style)
+    const int panelW = 180;
+    const int panelH = 220;
+    auto panelArea = bounds.removeFromBottom(bottomBar.getHeight());
+    if (instPanelVisible)
+        instancePanel.setBounds(topBar.getX(), topBar.getBottom() + 8, panelW, panelH);
+    if (undoPanelVisible)
+        historyPanel.setBounds(topBar.getRight() - panelW, topBar.getBottom() + 8, panelW, panelH);
 
     // Bottom bar (global only)
     int bx = bottomBar.getX() + 8;
@@ -1919,6 +2308,7 @@ void EeqEditor::resized()
         float py = panel.getY() + 4.0f;
         float knobW = 52.0f;
         float knobH = 48.0f;
+        float knobPitch = 80.0f;
         float smallBtn = 20.0f;
 
         // Row 1: Bypass | Type | Slope | Freq | Gain | Q | Ch | GQ | Prev | # | Next | Del
@@ -1929,11 +2319,11 @@ void EeqEditor::resized()
         slopeBox.setBounds(px, py, 48, smallBtn);
         px += 52;
         freqSlider.setBounds(px, py - 2, knobW, knobH);
-        px += knobW + 4;
+        px += knobPitch;
         gainSlider.setBounds(px, py - 2, knobW, knobH);
-        px += knobW + 4;
+        px += knobPitch;
         qSlider.setBounds(px, py - 2, knobW, knobH);
-        px += knobW + 4;
+        px += knobPitch;
         channelModeBox.setBounds(px, py, 56, smallBtn);
         px += 60;
         gainQBtn.setBounds(px, py, smallBtn, smallBtn);
@@ -1950,11 +2340,16 @@ void EeqEditor::resized()
         if (dynRangeSlider.isVisible())
         {
             float dy = py + knobH - 2;
-            dynRangeSlider.setBounds(panel.getX() + 18, dy, knobW, knobH - 8);
-            dynThreshSlider.setBounds(panel.getX() + 18 + knobW + 4, dy, knobW, knobH - 8);
-            dynAutoBtn.setBounds(panel.getX() + 18 + (knobW + 4) * 2, dy + 8, 36, 18);
-            scTriggerBtn.setBounds(panel.getX() + 18 + (knobW + 4) * 2 + 40, dy + 8, 28, 18);
-            phaseInvertBtn.setBounds(panel.getX() + 18 + (knobW + 4) * 2 + 72, dy + 8, 24, 18);
+            float d2 = panel.getX() + 18.0f;
+            dynRangeSlider.setBounds(d2, dy, knobW, knobH - 8);
+            d2 += knobPitch;
+            dynThreshSlider.setBounds(d2, dy, knobW, knobH - 8);
+            d2 += knobPitch;
+            dynAutoBtn.setBounds(d2, dy + 8, 36, 18);
+            d2 += 40;
+            scTriggerBtn.setBounds(d2, dy + 8, 28, 18);
+            d2 += 32;
+            phaseInvertBtn.setBounds(d2, dy + 8, 24, 18);
         }
     }
 
@@ -2143,4 +2538,381 @@ void EeqEditor::renderOpenGL()
 void EeqEditor::openGLContextClosing()
 {
     // Clean up OpenGL resources here
+}
+
+void EeqEditor::CollisionOverlay::update(const std::array<float, 4096>& spectrum)
+{
+    active = false;
+    peakFreq = 0.0f;
+    peakGain = -100.0f;
+
+    // Build red shading values in log-frequency domain
+    for (size_t i = 0; i < redShading.size(); ++i)
+        redShading[i] = 0.0f;
+
+    for (size_t i = 0; i < spectrum.size(); ++i)
+    {
+        float mag = spectrum[i];
+        if (mag > peakGain)
+        {
+            peakGain = mag;
+            peakFreq = (float)i;
+        }
+        if (mag > -60.0f)
+            redShading[i] = mag;
+    }
+
+    if (peakGain > -60.0f)
+        active = true;
+}
+
+// === InstanceListPanel implementation ===
+InstanceListPanel::InstanceListPanel()
+{
+    setSize(180, 240);
+    addBtn.setButtonText("+ Add");
+    removeBtn.setButtonText("-");
+    instanceNameLabel.setText("Instances", juce::dontSendNotification);
+
+    addAndMakeVisible(addBtn);
+    addAndMakeVisible(removeBtn);
+    addAndMakeVisible(instanceNameLabel);
+
+    addBtn.addListener(this);
+    removeBtn.addListener(this);
+
+    addInstance("Eeq");
+}
+
+InstanceListPanel::~InstanceListPanel() {}
+
+void InstanceListPanel::paint(juce::Graphics& g)
+{
+    auto bounds = getLocalBounds().toFloat();
+    juce::ColourGradient bgGrad(juce::Colour(0xff26262f), 0.0f, 0.0f,
+                                juce::Colour(0xff1a1a22), 0.0f, (float)getHeight(), false);
+    g.setGradientFill(bgGrad);
+    g.fillRoundedRectangle(bounds, 8.0f);
+    g.setColour(juce::Colour(0xff3a3a4a));
+    g.drawRoundedRectangle(bounds.reduced(0.5f, 0.5f), 8.0f, 1.0f);
+
+    g.setColour(juce::Colour(0xffe94560));
+    g.setFont(makeBoldFont(13));
+    g.drawText("Instance List", 6, 6, getWidth() - 12, 20, juce::Justification::left, false);
+
+    const auto rowsStart = 56;
+    const auto rowHeight = 24;
+    g.setFont(makeFont(12));
+    for (size_t i = 0; i < instances.size(); ++i)
+    {
+        auto y = static_cast<int>(rowsStart + i * rowHeight);
+        if (y + rowHeight > getHeight())
+            break;
+
+        auto bg = (static_cast<int>(i) == selectedInstance) ? juce::Colour(0x33e94560)
+                                                            : juce::Colour(0x33ffffff);
+        g.setColour(bg);
+        g.fillRect(6, y, getWidth() - 12, rowHeight - 2);
+
+        g.setColour(instances[i].visible ? juce::Colour(0xffe9e9ef) : juce::Colour(0xff8a8a97));
+        auto name = instances[i].name;
+        if (!instances[i].visible)
+            name = "(" + name + ")";
+        g.drawText(name, 10, y, getWidth() - 74, rowHeight - 2, juce::Justification::left, false);
+
+        // Collision toggle dot
+        g.setColour(instances[i].collisionDetected ? juce::Colour(0xffe94560)
+                                                   : juce::Colour(0xff3a3a45));
+        g.fillEllipse(getWidth() - 46, y + 7, 10, 10);
+
+        // Eye icon (show/hide)
+        auto eyeColour = instances[i].visible ? juce::Colour(0xff00b4d8) : juce::Colour(0xff555566);
+        g.setColour(eyeColour);
+        g.drawEllipse(getWidth() - 28, y + 5, 14, 14, 1.5f);
+        g.drawEllipse(getWidth() - 24, y + 9, 6, 6, 1.5f);
+        g.fillRect(getWidth() - 22, y + 11, 2, 2);
+    }
+}
+
+void InstanceListPanel::resized()
+{
+    addBtn.setBounds(6, 30, 90, 22);
+    removeBtn.setBounds(100, 30, 40, 22);
+    instanceNameLabel.setBounds(6, 54, getWidth() - 12, 16);
+}
+
+void InstanceListPanel::buttonClicked(juce::Button* btn)
+{
+    if (btn == &addBtn)
+    {
+        addInstance("Instance " + juce::String(static_cast<int>(instances.size()) + 1));
+    }
+    else if (btn == &removeBtn && !instances.empty())
+    {
+        removeInstance(static_cast<int>(instances.size()) - 1);
+        repaint();
+    }
+}
+
+void InstanceListPanel::mouseDown(const juce::MouseEvent& e)
+{
+    const int rowStart = 54;
+    const int rowHeight = 24;
+    const int rowIndex = ((int)e.getPosition().y - rowStart) / rowHeight;
+
+    if (rowIndex >= 0 && rowIndex < static_cast<int>(instances.size()))
+    {
+        selectedInstance = rowIndex;
+
+        // Right-click toggles collision display for that instance
+        if (e.mods.isRightButtonDown())
+        {
+            toggleCollision(rowIndex);
+        }
+        else
+        {
+            // Eye icon area on the right toggles visibility
+            juce::Rectangle<int> eyeRect(getWidth() - 34, rowStart + rowIndex * rowHeight, 20, rowHeight - 2);
+            if (eyeRect.contains(e.getPosition().toInt()))
+                toggleVisibility(rowIndex);
+            else
+                repaint();
+        }
+    }
+}
+
+void InstanceListPanel::mouseDoubleClick(const juce::MouseEvent& e)
+{
+    const int rowStart = 54;
+    const int rowHeight = 24;
+    const int rowIndex = ((int)e.getPosition().y - rowStart) / rowHeight;
+
+    if (rowIndex >= 0 && rowIndex < static_cast<int>(instances.size()))
+    {
+        selectedInstance = rowIndex;
+
+        // Use a modal AlertWindow for rename (JUCE 8 compatible, heap-managed).
+        auto* w = new juce::AlertWindow("Rename Instance", "Enter new name:",
+                                        juce::MessageBoxIconType::NoIcon);
+        w->addTextEditor("name", instances[static_cast<size_t>(rowIndex)].name);
+        w->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
+        w->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+
+        w->enterModalState(true,
+                           juce::ModalCallbackFunction::create([this, w](int result) {
+                               if (result != 0)
+                               {
+                                   auto newName = w->getTextEditorContents("name");
+                                   if (newName.isNotEmpty())
+                                       renameInstance(selectedInstance, newName);
+                               }
+                               delete w;
+                           }));
+    }
+}
+
+void InstanceListPanel::setVisibleFromPanel(int index, bool vis)
+{
+    if (index >= 0 && index < static_cast<int>(instances.size()))
+    {
+        instances[static_cast<size_t>(index)].visible = vis;
+        repaint();
+    }
+}
+
+void InstanceListPanel::toggleCollision(int index)
+{
+    if (index >= 0 && index < static_cast<int>(instances.size()))
+    {
+        instances[static_cast<size_t>(index)].collisionDetected = !instances[static_cast<size_t>(index)].collisionDetected;
+        repaint();
+    }
+}
+
+void InstanceListPanel::addInstance(const juce::String& name)
+{
+    InstanceRow row;
+    row.id = static_cast<int>(instances.size()) + 1;
+    row.name = name;
+    row.visible = true;
+    instances.push_back(row);
+    repaint();
+}
+
+void InstanceListPanel::removeInstance(int index)
+{
+    if (index >= 0 && index < static_cast<int>(instances.size()))
+    {
+        instances.erase(instances.begin() + index);
+        if (selectedInstance >= static_cast<int>(instances.size()))
+            selectedInstance = -1;
+    }
+}
+
+void InstanceListPanel::renameInstance(int index, const juce::String& newName)
+{
+    if (index >= 0 && index < static_cast<int>(instances.size()))
+    {
+        instances[static_cast<size_t>(index)].name = newName;
+        repaint();
+    }
+}
+
+void InstanceListPanel::toggleVisibility(int index)
+{
+    if (index >= 0 && index < static_cast<int>(instances.size()))
+    {
+        instances[static_cast<size_t>(index)].visible = !instances[static_cast<size_t>(index)].visible;
+        repaint();
+    }
+}
+
+void InstanceListPanel::setInstanceName(int index, const juce::String& name)
+{
+    renameInstance(index, name);
+}
+
+void InstanceListPanel::syncWithProcessor(EeqProcessor& processor)
+{
+    auto& list = EeqProcessor::getInstanceList();
+    int currentCount = static_cast<int>(instances.size());
+    int desiredCount = static_cast<int>(list.size());
+
+    while (instances.size() < static_cast<size_t>(desiredCount))
+        addInstance("Eeq " + juce::String(static_cast<int>(instances.size()) + 1));
+
+    while (instances.size() > static_cast<size_t>(desiredCount))
+    {
+        int last = static_cast<int>(instances.size()) - 1;
+        bool isCurrent = false;
+        auto& myList = EeqProcessor::getInstanceList();
+        for (auto* info : myList)
+        {
+            if (info->instanceId == reinterpret_cast<uintptr_t>(&processor))
+                isCurrent = true;
+        }
+        // keep current instance's own info manageable
+        (void)isCurrent;
+        removeInstance(last);
+    }
+
+    for (int i = 0; i < desiredCount && i < static_cast<int>(instances.size()); ++i)
+    {
+        auto* info = list[static_cast<size_t>(i)];
+        if (info != nullptr)
+        {
+            instances[static_cast<size_t>(i)].name = info->name;
+            // Do NOT overwrite user-controlled visibility from the panel.
+        }
+    }
+    repaint();
+}
+
+// === UndoHistoryPanel implementation ===
+UndoHistoryPanel::UndoHistoryPanel()
+{
+    setSize(180, 240);
+    undoBtn.setButtonText("Undo");
+    redoBtn.setButtonText("Redo");
+    historyLabel.setText("History: Empty", juce::dontSendNotification);
+
+    addAndMakeVisible(undoBtn);
+    addAndMakeVisible(redoBtn);
+    addAndMakeVisible(historyLabel);
+
+    undoBtn.addListener(this);
+    redoBtn.addListener(this);
+
+    addHistoryItem("Plugin loaded");
+}
+
+UndoHistoryPanel::~UndoHistoryPanel() {}
+
+void UndoHistoryPanel::paint(juce::Graphics& g)
+{
+    auto bounds = getLocalBounds().toFloat();
+    juce::ColourGradient bgGrad(juce::Colour(0xff26262f), 0.0f, 0.0f,
+                                juce::Colour(0xff1a1a22), 0.0f, (float)getHeight(), false);
+    g.setGradientFill(bgGrad);
+    g.fillRoundedRectangle(bounds, 8.0f);
+    g.setColour(juce::Colour(0xff3a3a4a));
+    g.drawRoundedRectangle(bounds.reduced(0.5f, 0.5f), 8.0f, 1.0f);
+
+    g.setColour(juce::Colour(0xffe94560));
+    g.setFont(makeBoldFont(13));
+    g.drawText("Undo History", 6, 6, getWidth() - 12, 20, juce::Justification::left, false);
+
+    const auto rowsStart = 78;
+    const auto rowHeight = 20;
+    g.setFont(makeFont(11));
+    g.setColour(juce::Colour(0xffa9a9b5));
+    for (size_t i = 0; i < history.size() && i < 7; ++i)
+    {
+        auto y = static_cast<int>(rowsStart + i * rowHeight);
+        g.drawText(juce::String(i + 1) + ". " + history[i].description, 10, y, getWidth() - 20,
+                   rowHeight - 2, juce::Justification::left, false);
+    }
+}
+
+void UndoHistoryPanel::resized()
+{
+    undoBtn.setBounds(6, 30, 82, 22);
+    redoBtn.setBounds(92, 30, 82, 22);
+    historyLabel.setBounds(6, 56, getWidth() - 12, 18);
+}
+
+void UndoHistoryPanel::buttonClicked(juce::Button* btn)
+{
+    if (btn == &undoBtn && canUndo())
+        undo();
+    else if (btn == &redoBtn && canRedo())
+        redo();
+}
+
+void UndoHistoryPanel::addHistoryItem(const juce::String& description)
+{
+    history.push_front({description, static_cast<int>(history.size())});
+    if (history.size() > static_cast<size_t>(maxHistorySize))
+        history.pop_back();
+    updateLabel();
+    repaint();
+}
+
+void UndoHistoryPanel::clearHistory()
+{
+    history.clear();
+    redoStack.clear();
+    updateLabel();
+    repaint();
+}
+
+void UndoHistoryPanel::undo()
+{
+    if (history.empty())
+        return;
+
+    auto item = history.front();
+    history.pop_front();
+    redoStack.push_front(item);
+    updateLabel();
+    repaint();
+}
+
+void UndoHistoryPanel::redo()
+{
+    if (redoStack.empty())
+        return;
+
+    auto item = redoStack.front();
+    redoStack.pop_front();
+    history.push_front(item);
+    updateLabel();
+    repaint();
+}
+
+void UndoHistoryPanel::updateLabel()
+{
+    historyLabel.setText("History: " + juce::String(static_cast<int>(history.size())) + " item(s)",
+                         juce::dontSendNotification);
+    historyLabel.setColour(juce::Label::ColourIds::textColourId, juce::Colour(0xffa9a9b5));
 }

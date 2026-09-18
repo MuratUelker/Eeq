@@ -22,6 +22,12 @@ struct EQSnapshot
     float gainScale = 1.0f;
 };
 
+struct CollisionData {
+    float peakFreq = -1.0f;
+    float peakGain = -100.0f;
+    bool detected = false;
+};
+
 class EeqProcessor : public juce::AudioProcessor
 {
 public:
@@ -204,6 +210,9 @@ private:
     EQSnapshot stateB{};
     bool stateBActive = false;
 
+    // Collision detection
+    CollisionData collisionData;
+
     // Band clipboard
     struct ClipboardBand
     {
@@ -227,16 +236,21 @@ private:
     bool clipboardValid = false;
 
     // Instance List / Inter-plugin communication
-    struct InstanceInfo
-    {
+    struct InstanceInfo {
         uintptr_t instanceId = 0;
         juce::String name;
         std::array<float, 4096> spectrum{};
         bool hasSpectrum = false;
         bool isVisible = true;
+        float peakFreq = -1.0f;
+        float peakGain = -100.0f;
     };
 
 public:
+    // Startup / diagnostics logging (~/Library/Logs/Eeq.log)
+    static juce::File getLogFile();
+    static void writeLog(const juce::String& message);
+
     static std::vector<InstanceInfo*>& getInstanceList();
     void registerInstance();
     void unregisterInstance();
@@ -244,6 +258,12 @@ public:
     void setInstanceName(const juce::String& name);
     const juce::String& getInstanceName() const;
     const std::vector<InstanceInfo*>& getVisibleInstances() const;
+
+private:
+    // Collision detection
+    void detectCollision(const std::array<float, 4096>& spectrum);
+    bool hasSpectrum() const;
+    const CollisionData& getCollisionData() const { return collisionData; }
 
 private:
     EQSnapshot captureState();
