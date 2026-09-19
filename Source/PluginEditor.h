@@ -252,6 +252,8 @@ private:
     // Dynamic EQ (row 2 of floating panel)
     juce::Slider dynRangeSlider;
     juce::Slider dynThreshSlider;
+    juce::Slider dynAtkSlider;
+    juce::Slider dynRelSlider;
     juce::ToggleButton dynAutoBtn{"Auto"};
     juce::ToggleButton scTriggerBtn{"SC"};
     juce::ToggleButton phaseInvertBtn{"Ø"};

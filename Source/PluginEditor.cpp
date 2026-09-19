@@ -517,6 +517,30 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     dynThreshSlider.setVisible(false);
     dynThreshSlider.addListener(this);
 
+    dynAtkSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
+    dynAtkSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 88, 20);
+    dynAtkSlider.setRange(1.0, 500.0, 0.1);
+    dynAtkSlider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xFFe76f51));
+    dynAtkSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFFe76f51));
+    dynAtkSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFffffff));
+    dynAtkSlider.setDoubleClickReturnValue(true, 10.0);
+    dynAtkSlider.setTooltip("Manual attack time (ms): used when Auto Attack is off");
+    addAndMakeVisible(dynAtkSlider);
+    dynAtkSlider.setVisible(false);
+    dynAtkSlider.addListener(this);
+
+    dynRelSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
+    dynRelSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 88, 20);
+    dynRelSlider.setRange(1.0, 2000.0, 0.1);
+    dynRelSlider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xFFe76f51));
+    dynRelSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFFe76f51));
+    dynRelSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFffffff));
+    dynRelSlider.setDoubleClickReturnValue(true, 100.0);
+    dynRelSlider.setTooltip("Manual release time (ms): used when Auto Release is off");
+    addAndMakeVisible(dynRelSlider);
+    dynRelSlider.setVisible(false);
+    dynRelSlider.addListener(this);
+
     dynAutoBtn.setButtonText("Auto");
     dynAutoBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFF2a9d8f));
     dynAutoBtn.setClickingTogglesState(true);
@@ -943,6 +967,10 @@ void EeqEditor::updateControlsFromBand(int idx)
     slopeBox.setSelectedId(slopeIdx + 1, juce::dontSendNotification);
     dynRangeSlider.setValue(dynR, juce::dontSendNotification);
     dynThreshSlider.setValue(dynT, juce::dontSendNotification);
+    dynAtkSlider.setValue((float)apvts.getRawParameterValue("b" + id + "_dynAtkMs")->load(), juce::dontSendNotification);
+    dynRelSlider.setValue((float)apvts.getRawParameterValue("b" + id + "_dynRelMs")->load(), juce::dontSendNotification);
+    bool autoAtk = apvts.getRawParameterValue("b" + id + "_dynAutoAtk")->load() > 0.5f;
+    bool autoRel = apvts.getRawParameterValue("b" + id + "_dynAutoRel")->load() > 0.5f;
     dynAutoBtn.setToggleState(dynA, juce::dontSendNotification);
     scTriggerBtn.setToggleState(sc, juce::dontSendNotification);
     phaseInvertBtn.setToggleState(apvts.getRawParameterValue("b" + id + "_phase")->load() > 0.5f, juce::dontSendNotification);
@@ -956,6 +984,11 @@ void EeqEditor::updateControlsFromBand(int idx)
     dynAutoBtn.setVisible(dyn);
     scTriggerBtn.setVisible(dyn);
     phaseInvertBtn.setVisible(true);
+
+    bool showAtk = dyn && dynA && !autoAtk;
+    dynAtkSlider.setVisible(showAtk);
+    bool showRel = dyn && dynA && !autoRel;
+    dynRelSlider.setVisible(showRel);
 }
 
 void EeqEditor::updateBandFromControls(int idx)
@@ -991,6 +1024,10 @@ void EeqEditor::updateBandFromControls(int idx)
         apvts.getParameter("b" + id + "_dynRange")->convertTo0to1((float)dynRangeSlider.getValue()));
     apvts.getParameter("b" + id + "_dynThresh")->setValueNotifyingHost(
         apvts.getParameter("b" + id + "_dynThresh")->convertTo0to1((float)dynThreshSlider.getValue()));
+    apvts.getParameter("b" + id + "_dynAtkMs")->setValueNotifyingHost(
+        apvts.getParameter("b" + id + "_dynAtkMs")->convertTo0to1((float)dynAtkSlider.getValue()));
+    apvts.getParameter("b" + id + "_dynRelMs")->setValueNotifyingHost(
+        apvts.getParameter("b" + id + "_dynRelMs")->convertTo0to1((float)dynRelSlider.getValue()));
 }
 
 void EeqEditor::updateBandFromMouse(int band, float mx, float my)
@@ -2484,6 +2521,16 @@ void EeqEditor::resized()
             scTriggerBtn.setBounds(d2, dy + 6, 40, 24);
             d2 += 48;
             phaseInvertBtn.setBounds(d2, dy + 6, 36, 24);
+            d2 += 36;
+
+            if (dynAtkSlider.isVisible()) {
+                dynAtkSlider.setBounds(d2, dy - 4, knobW, 46.0f);
+                d2 += knobPitch;
+            }
+            if (dynRelSlider.isVisible()) {
+                dynRelSlider.setBounds(d2, dy - 4, knobW, 46.0f);
+                d2 += knobPitch;
+            }
         }
     }
 
