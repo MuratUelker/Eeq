@@ -41,6 +41,12 @@ juce::AudioProcessorValueTreeState::ParameterLayout EeqProcessor::createLayout()
             juce::ParameterID{"b" + id + "_gain", 1}, "Band " + id + " Gain",
             juce::NormalisableRange<float>(-30.0f, 30.0f, 0.01f), 0.0f));
         layout.add(std::make_unique<juce::AudioParameterFloat>(
+            juce::ParameterID{"b" + id + "_midGain", 1}, "Band " + id + " Mid Gain",
+            juce::NormalisableRange<float>(-30.0f, 30.0f, 0.01f), 0.0f));
+        layout.add(std::make_unique<juce::AudioParameterFloat>(
+            juce::ParameterID{"b" + id + "_sideGain", 1}, "Band " + id + " Side Gain",
+            juce::NormalisableRange<float>(-30.0f, 30.0f, 0.01f), 0.0f));
+        layout.add(std::make_unique<juce::AudioParameterFloat>(
             juce::ParameterID{"b" + id + "_q", 1}, "Band " + id + " Q",
             juce::NormalisableRange<float>(0.1f, 10.0f, 0.01f, 0.4f), 0.707f));
         layout.add(std::make_unique<juce::AudioParameterChoice>(
@@ -491,6 +497,8 @@ void EeqProcessor::syncAllBandsToDSP()
         BandState state;
         state.freq = apvts.getRawParameterValue("b" + id + "_freq")->load();
         state.gain = apvts.getRawParameterValue("b" + id + "_gain")->load();
+        state.midGain = apvts.getRawParameterValue("b" + id + "_midGain")->load();
+        state.sideGain = apvts.getRawParameterValue("b" + id + "_sideGain")->load();
         state.q = apvts.getRawParameterValue("b" + id + "_q")->load();
         int typeIdx = (int)apvts.getRawParameterValue("b" + id + "_type")->load();
         state.active = apvts.getRawParameterValue("b" + id + "_active")->load() > 0.5f;

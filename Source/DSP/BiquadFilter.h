@@ -121,6 +121,8 @@ struct BandState
 {
     float freq = 1000.0f;
     float gain = 0.0f;
+    float midGain = 0.0f;
+    float sideGain = 0.0f;
     float q = 0.707f;
     FilterType type = FilterType::Bell;
     FilterSlope slope = FilterSlope::Slope24;
