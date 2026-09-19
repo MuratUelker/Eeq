@@ -2268,6 +2268,30 @@ void EeqEditor::drawBandInfo(juce::Graphics& g, juce::Rectangle<float> d)
     g.drawText(juce::String(activeCount) + " / " + juce::String(NUM_BANDS) + " bands",
                d.getX() + 4, d.getY() + 2, 80, 14, juce::Justification::centredLeft);
 
+    // Live M/S gain offset chip (Pro-Q parity): a band routed to Mid or Side
+    // with a non-zero split-gain offset shows a compact second readout in the
+    // strip info row. Paint-only; reads live APVTS, writes nothing.
+    if (selectedBand >= 0 && selectedBand < NUM_BANDS)
+    {
+        auto bandId = juce::String(selectedBand + 1);
+        auto chVal = (int)processor.getAPVTS().getRawParameterValue("b" + bandId + "_ch")->load();
+        float chipDb = 0.0f;
+        juce::String which;
+        if (chVal == 3)      { which = "M"; chipDb = processor.getAPVTS().getRawParameterValue("b" + bandId + "_midGain")->load(); }
+        else if (chVal == 4) { which = "S"; chipDb = processor.getAPVTS().getRawParameterValue("b" + bandId + "_sideGain")->load(); }
+        if (which.isNotEmpty() && std::fabs(chipDb) > 0.05f)
+        {
+            juce::Colour chipCol = juce::Colour(0xFF00b4d8).withAlpha(0.85f);
+            juce::Rectangle<int> chip((int)(d.getX() + 88), (int)(d.getY() + 2), 58, 14);
+            g.setColour(chipCol);
+            g.drawRoundedRectangle(chip.toFloat(), 4.0f, 1.0f);
+            g.setColour(chipCol);
+            auto txt = which + " " + (chipDb > 0.0f ? "+" : "-")
+                       + juce::String(std::fabs(chipDb), 1) + " dB";
+            g.drawText(txt, chip.getX(), chip.getY(), 58, 14, juce::Justification::centred);
+        }
+    }
+
     float range = processor.getDisplayRange();
     g.drawText(juce::String((int)range) + " dB range",
                d.getRight() - 70, d.getY() + 2, 66, 14, juce::Justification::centredRight);
