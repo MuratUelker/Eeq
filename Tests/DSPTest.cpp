@@ -24,6 +24,9 @@ static int testsFailed = 0;
     do { if (std::abs((a) - (b)) > (eps)) \
         throw std::runtime_error(std::string("ASSERT_NEAR failed: ") + #a + " != " + #b); } while(0)
 
+// The DSP uses gain normalized to 0..1 where 0.5 = 0dB, 1.0 = +30dB, 0.0 = -30dB
+static float dbToNorm(float db) { return (db + 30.0f) / 60.0f; }
+
 // ==================== E2E Tests ====================
 
 void test_full_lifecycle()
@@ -33,7 +36,7 @@ void test_full_lifecycle()
 
     BandState band;
     band.freq = 1000.0f;
-    band.gain = 6.0f;
+    band.gain = dbToNorm(6.0f);
     band.q = 0.707f;
     band.type = FilterType::Bell;
     band.active = true;
@@ -128,7 +131,7 @@ void test_solo()
     // Band 0: bell at 1kHz, soloed, will pass 1kHz signal
     BandState band1;
     band1.freq = 1000.0f;
-    band1.gain = 0.0f;
+    band1.gain = dbToNorm(0.0f);
     band1.q = 0.707f;
     band1.type = FilterType::Bell;
     band1.active = true;
@@ -139,7 +142,7 @@ void test_solo()
     // Band 1: 12dB boost at 2kHz, NOT soloed — should be ignored
     BandState band2;
     band2.freq = 2000.0f;
-    band2.gain = 12.0f;
+    band2.gain = dbToNorm(12.0f);
     band2.q = 0.707f;
     band2.type = FilterType::Bell;
     band2.active = true;
@@ -313,7 +316,7 @@ void test_gain_scale()
 
     BandState band;
     band.freq = 1000.0f;
-    band.gain = 12.0f;
+    band.gain = dbToNorm(12.0f);
     band.q = 0.707f;
     band.type = FilterType::Bell;
     band.active = true;
@@ -349,7 +352,7 @@ void test_mid_side_processing()
 
     BandState band;
     band.freq = 1000.0f;
-    band.gain = 12.0f;
+    band.gain = dbToNorm(12.0f);
     band.q = 0.707f;
     band.type = FilterType::Bell;
     band.active = true;
@@ -370,6 +373,86 @@ void test_mid_side_processing()
         ASSERT_TRUE(std::isfinite(left[i]));
         ASSERT_TRUE(std::isfinite(right[i]));
     }
+}
+
+void test_dynamic_eq_lookahead()
+{
+    // Validate the O(numSamples) sliding-window lookahead detector used by
+    // processDynamicEQ: with lookahead > 0 the onset is anticipated ~lookahead
+    // samples earlier, so the ducking threshold is crossed sooner than without.
+    Equalizer eq;
+    eq.prepare(44100.0, 512);
+
+    BandState band;
+    band.freq = 1000.0f;
+    band.gain = dbToNorm(0.0f);
+    band.q = 0.707f;
+    band.type = FilterType::Bell;
+    band.active = true;
+    band.channelMode = ChannelMode::Stereo;
+    band.dynamic.enabled = true;
+    band.dynamic.dynamicRange = -6.0f;      // duck up to 6dB
+    band.dynamic.threshold = -20.0f;
+    band.dynamic.autoThreshold = false;
+    band.dynamic.autoAttack = false;        // fast, deterministic envelope
+    band.dynamic.autoRelease = false;
+    band.dynamic.attackMs = 1.0f;
+    band.dynamic.releaseMs = 50.0f;
+    eq.setBand(0, band);
+
+    const int N = 2048;         // 4 blocks of 512
+    const int onset = 1224;     // mid-block onset (block 2, offset 200)
+
+    auto run = [&](int lookaheadSamples, float& duckAt, float& minLevel)
+    {
+        Equalizer eq2;
+        eq2.prepare(44100.0, 512);
+        eq2.setBand(0, band);
+        eq2.setLookaheadSamples(lookaheadSamples);
+
+        std::vector<float> input(N, 0.0f), output(N, 0.0f);
+        for (int i = onset; i < N; ++i)
+            output[i] = input[i] = 0.5f * std::cos(2.0f * 3.14159265f * 1000.0f * (i - onset) / 44100.0f);
+
+        for (int off = 0; off < N; off += 512)
+        {
+            float ll[512], rr[512];
+            for (int k = 0; k < 512; ++k)
+            {
+                int idx = off + k;
+                ll[k] = (idx < N) ? output[idx] : 0.0f;
+                rr[k] = ll[k];
+            }
+            eq2.process(ll, rr, 512);
+            for (int k = 0; k < 512; ++k)
+                if (off + k < N)
+                    output[off + k] = rr[k];
+        }
+
+        duckAt = -1.0f;
+        minLevel = 1e9f;
+        for (int i = onset; i < N; ++i)
+        {
+            if (std::abs(input[i]) > 0.01f)
+            {
+                float ratio = std::abs(input[i]) / std::max(std::abs(output[i]), 1e-6f);
+                if (ratio > 1.1f && duckAt < 0.0f)
+                    duckAt = (float)i;
+                minLevel = std::min(minLevel, std::abs(output[i]));
+            }
+        }
+    };
+
+    float duckNoLk = -1.0f, minNoLk = 0.0f;
+    float duckLk = -1.0f, minLk = 0.0f;
+    run(0, duckNoLk, minNoLk);
+    run(128, duckLk, minLk);
+
+    ASSERT_TRUE(duckNoLk >= 0.0f);             // dynamic EQ actually ducks the tone
+    ASSERT_TRUE(minNoLk < 0.5f);               // ... and ducks it meaningfully
+    ASSERT_TRUE(duckLk >= 0.0f);
+    ASSERT_TRUE(duckLk < duckNoLk);            // onset is detected earlier with lookahead
+    ASSERT_TRUE(minLk <= minNoLk + 0.02f);     // lookahead ducks at least as deep
 }
 
 // ==================== Antialiasing Tests ====================
@@ -647,6 +730,7 @@ int main()
     TEST(silence_passes_clean);
     TEST(gain_scale);
     TEST(mid_side_processing);
+    TEST(dynamic_eq_lookahead);
 
     std::cout << "\n--- Antialiasing Tests ---\n";
     TEST(low_cut_rejects_nyquist);

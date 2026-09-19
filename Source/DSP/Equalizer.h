@@ -4,6 +4,7 @@
 #include <cstring>
 #include <complex>
 #include <vector>
+#include <algorithm>
 
 static constexpr int MAX_BANDS = 24;
 
@@ -65,6 +66,10 @@ public:
     void setSmoothingTime(float ms) { smoothingTimeMs = ms; }
     float getSmoothingTime() const { return smoothingTimeMs; }
 
+// Lookahead dynamic EQ
+    void setLookaheadSamples(int numSamples) { lookaheadLookAhead = std::min(4096, std::max(0, numSamples)); }
+    int getLookaheadSamples() const { return lookaheadLookAhead; }
+
     static constexpr int NUM_BANDS = MAX_BANDS;
 
 private:
@@ -85,6 +90,23 @@ private:
     std::array<float, MAX_BANDS> envelope{};
     float scLevelL = 0.0f;
     float scLevelR = 0.0f;
+
+    // Lookahead buffer for dynamic EQ
+    std::vector<float> lookaheadBufferL;
+    std::vector<float> lookaheadBufferR;
+    int lookaheadWritePos = 0;
+    bool lookaheadReady = false;
+    int lookaheadLookAhead = 512; // Lookahead in samples (≈12ms at 44.1kHz)
+
+    // Reusable sidechain detector buffer (avoids allocation on the audio thread)
+    std::vector<float> scDetectorBuffer;
+
+    // Lookahead peak window buffer + monotonic deque index storage (avoids RT allocation)
+    std::vector<float> lookaheadPeak;
+    std::vector<int> lookaheadIdx;
+
+    // Sample-accurate dynamic-gain factor per sample (applied on the band's block output)
+    std::vector<float> dynGainFactor;
 
     // Linear phase FFT (dynamic size based on resolution)
     int fftSize = 4096;
@@ -116,5 +138,5 @@ private:
     void allocateNaturalPhaseBuffers(int fftSize);
     void computeEQFrequencyResponse(std::complex<float>* response, int numBins, float sampleRate);
     void fftInPlace(std::complex<float>* data, int n, bool inverse);
-    void processDynamicEQ(int bandIdx, float& gain, float inputLevel);
+    void processDynamicEQ(int bandIdx, const float* detL, const float* detR, int numSamples);
 };

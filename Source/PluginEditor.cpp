@@ -549,6 +549,12 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     addAndMakeVisible(phaseBtn);
     phaseBtn.addListener(this);
 
+    globalBypassBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFe94560));
+    globalBypassBtn.setClickingTogglesState(true);
+    globalBypassBtn.setTooltip("Global bypass (B): disables the entire EQ without affecting the signal path");
+    addAndMakeVisible(globalBypassBtn);
+    globalBypassBtn.addListener(this);
+
     autoGainBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFa0a0c0));
     autoGainBtn.setToggleState(true, juce::dontSendNotification);
     autoGainBtn.setTooltip("Compensate for gain changes introduced by the EQ curve");
@@ -826,13 +832,20 @@ float EeqEditor::xToFreq(float x, juce::Rectangle<float> d) const
 float EeqEditor::gainToY(float gain, juce::Rectangle<float> d) const
 {
     float range = processor.getDisplayRange();
-    return (d.getHeight() * 0.5f) - (gain / range) * (d.getHeight() * 0.5f);
+    // Use a reference range of 6.0f for consistency with yToGain
+    // The displayRange still controls visual display scaling
+    constexpr float REFERENCE_RANGE = 6.0f;
+    return (d.getHeight() * 0.5f) - (gain / REFERENCE_RANGE) * (d.getHeight() * 0.5f);
 }
 
 float EeqEditor::yToGain(float y, juce::Rectangle<float> d) const
 {
     float range = processor.getDisplayRange();
-    return ((d.getHeight() * 0.5f) - y) / (d.getHeight() * 0.5f) * range;
+    // Use a reference range of 6.0f for mouse sensitivity to ensure consistent
+    // behavior regardless of the display range setting. The displayRange variable
+    // still controls the visual zoom of the EQ curve.
+    constexpr float REFERENCE_RANGE = 6.0f;
+    return ((d.getHeight() * 0.5f) - y) / (d.getHeight() * 0.5f) * REFERENCE_RANGE;
 }
 
 float EeqEditor::qToRadius(float q) const
@@ -967,8 +980,10 @@ void EeqEditor::updateBandFromControls(int idx)
         apvts.getParameter("b" + id + "_type")->convertTo0to1(type));
     apvts.getParameter("b" + id + "_ch")->setValueNotifyingHost(
         apvts.getParameter("b" + id + "_ch")->convertTo0to1(ch));
+    bool isCutType = (type == 3 || type == 4);
     apvts.getParameter("b" + id + "_slope")->setValueNotifyingHost(
-        apvts.getParameter("b" + id + "_slope")->convertTo0to1(slopeBox.getSelectedId() - 1));
+        apvts.getParameter("b" + id + "_slope")->convertTo0to1(
+            isCutType ? slopeBox.getSelectedId() - 1 : 0));
     apvts.getParameter("b" + id + "_sc")->setValueNotifyingHost(
         scTriggerBtn.getToggleState() ? 1.0f : 0.0f);
 
@@ -1412,6 +1427,11 @@ bool EeqEditor::keyPressed(const juce::KeyPress& key)
         }
         return true;
     }
+    if (key == juce::KeyPress('b', true, false))
+    {
+        globalBypassBtn.setToggleState(!globalBypassBtn.getToggleState(), juce::sendNotification);
+        return true;
+    }
     if (key == juce::KeyPress('s', false, false))
     {
         if (selectedBand >= 0)
@@ -1606,6 +1626,8 @@ void EeqEditor::buttonClicked(juce::Button* btn)
     }
     else if (btn == &phaseBtn)
         processor.setPhaseInverted(phaseBtn.getToggleState());
+    else if (btn == &globalBypassBtn)
+        processor.setGlobalBypassEnabled(globalBypassBtn.getToggleState());
     else if (btn == &autoGainBtn)
         processor.setAutoGainEnabled(autoGainBtn.getToggleState());
     else if (btn == &autoGainAdvBtn)
@@ -2408,6 +2430,8 @@ void EeqEditor::resized()
     autoGainAdvBtn.setBounds(bx, by, 30, 26);
     bx += 38;
     phaseBtn.setBounds(bx, by, 56, 26);
+    bx += 64;
+    globalBypassBtn.setBounds(bx, by, 56, 26);
 
     // === Fixed band controls strip (Pro-Q3 style) ===
     auto panel = getBandControlsBounds();

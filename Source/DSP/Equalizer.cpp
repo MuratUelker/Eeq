@@ -38,6 +38,16 @@ void Equalizer::prepare(double sampleRate, int samplesPerBlock)
 
     int npFftSize = static_cast<int>(npResolution);
     allocateNaturalPhaseBuffers(npFftSize);
+    
+    // Initialize lookahead buffers for dynamic EQ
+    lookaheadBufferL.resize(lookaheadLookAhead, 0.0f);
+    lookaheadBufferR.resize(lookaheadLookAhead, 0.0f);
+    lookaheadWritePos = 0;
+    lookaheadReady = false;
+
+    lookaheadPeak.resize(std::max(samplesPerBlock, 1));
+    lookaheadIdx.resize(std::max(samplesPerBlock, 1));
+    scDetectorBuffer.resize(std::max(samplesPerBlock, 1));
 }
 
 void Equalizer::allocateNaturalPhaseBuffers(int size)
@@ -54,10 +64,10 @@ void Equalizer::allocateNaturalPhaseBuffers(int size)
     npReady = false;
 }
 
-void Equalizer::processDynamicEQ(int bandIdx, float& gain, float inputLevel)
+void Equalizer::processDynamicEQ(int bandIdx, const float* detL, const float* detR, int numSamples)
 {
     auto& dyn = bands[bandIdx].dynamic;
-    if (!dyn.enabled) return;
+    if (!dyn.enabled || numSamples <= 0) return;
 
     float threshold = dyn.autoThreshold ? -20.0f : dyn.threshold;
 
@@ -72,7 +82,7 @@ void Equalizer::processDynamicEQ(int bandIdx, float& gain, float inputLevel)
         attackMs *= (1.0f + std::abs(dyn.dynamicRange) / 30.0f * 2.0f); // Scale with range
     }
     else
-        attackMs = dyn.attackMs;
+        attackMs = std::max(0.01f, dyn.attackMs);
 
     if (dyn.autoRelease)
     {
@@ -83,24 +93,78 @@ void Equalizer::processDynamicEQ(int bandIdx, float& gain, float inputLevel)
         releaseMs *= (1.0f + std::abs(dyn.dynamicRange) / 30.0f); // Scale with range
     }
     else
-        releaseMs = dyn.releaseMs;
+        releaseMs = std::max(0.01f, dyn.releaseMs);
 
     float attack = 1.0f - std::exp(-1.0f / (currentSampleRate * attackMs / 1000.0f));
     float release = 1.0f - std::exp(-1.0f / (currentSampleRate * releaseMs / 1000.0f));
 
-    float levelDB = 20.0f * std::log10(std::max(inputLevel, 1e-10f));
+    // Lookahead window for the detector (samples). Within the current block the
+    // signal is fully available, so the detector can anticipate onsets by looking
+    // a few samples ahead without adding audio latency.
+    const int lookahead = std::min(std::max(lookaheadLookAhead, 0), 512);
 
-    if (levelDB > envelope[bandIdx])
-        envelope[bandIdx] += attack * (levelDB - envelope[bandIdx]);
-    else
-        envelope[bandIdx] += release * (levelDB - envelope[bandIdx]);
+    if ((size_t)numSamples > dynGainFactor.size())
+        dynGainFactor.resize(numSamples);
 
-    float over = envelope[bandIdx] - threshold;
-    if (over > 0.0f)
+    // Precompute peak(|det|) over the lookahead window [s, s + lookahead) for every
+    // sample in this block in O(numSamples) using a monotonic deque. Window max
+    // survives in the deque front as the window slides one sample at a time.
+    const float* detMono = detL;
+    const float* detMonoOther = detR; // nullptr for mono/sidechain
+    auto detValue = [&](int idx) -> float
     {
-        float reduction = over * (dyn.dynamicRange / 30.0f);
-        gain += reduction;
+        float v = std::abs(detMono[idx]);
+        if (detMonoOther != nullptr)
+            v = std::max(v, std::abs(detMonoOther[idx]));
+        return v;
+    };
+
+    int head = 0, tail = 0; // [head, tail) in lookaheadIdx
+    auto pushIdx = [&](int idx)
+    {
+        while (tail > head && detValue(lookaheadIdx[tail - 1]) <= detValue(idx))
+            --tail;
+        lookaheadIdx[tail++] = idx;
+    };
+
+    const int windowEnd0 = std::min(lookahead, numSamples);
+    for (int i = 0; i < windowEnd0; ++i)
+        pushIdx(i);
+
+    for (int s = 0; s < numSamples; ++s)
+    {
+        int limit = s + lookahead;
+        if (head < tail && lookaheadIdx[head] < s)
+            ++head;
+        if (limit < numSamples)
+            pushIdx(limit);
+        lookaheadPeak[s] = (head < tail) ? detValue(lookaheadIdx[head]) : 0.0f;
     }
+
+    float env = envelope[bandIdx]; // dB
+
+    for (int s = 0; s < numSamples; ++s)
+    {
+        float peak = lookaheadPeak[s];
+
+        float detDb = 20.0f * std::log10(std::max(peak, 1e-8f));
+
+        if (detDb > env)
+            env += attack * (detDb - env);
+        else
+            env += release * (detDb - env);
+
+        float over = env - threshold;
+        float reduction = 0.0f;
+        if (over > 0.0f)
+            reduction = over * (dyn.dynamicRange / 30.0f);
+
+        // Store as a linear multiplier so the caller can apply it sample-accurately
+        // on top of the band's static gain without accumulating per-sample offsets.
+        dynGainFactor[s] = std::pow(10.0f, reduction / 20.0f);
+    }
+
+    envelope[bandIdx] = env;
 }
 
 void Equalizer::setBand(int index, const BandState& state)
@@ -170,19 +234,23 @@ for (int i = 0; i < MAX_BANDS; ++i)
 
         if (bands[i].dynamic.enabled)
         {
-            float inputLevel = 0.0f;
-            // Use first two channels for dynamic detection if available
-            if (numChannels >= 2 && bands[i].scTrigger && scLevelL > 0.0f)
+            const float* detL = (numChannels >= 1) ? channels[0] : nullptr;
+            const float* detR = (numChannels >= 2) ? channels[1] : nullptr;
+
+            if (bands[i].scTrigger && scLevelL > 0.0f)
             {
-                inputLevel = 0.5f * (scLevelL + scLevelR);
+                // Sidechain-driven detection: the detector sees a constant level
+                // equal to the sidechain RMS for this block (avoids per-sample
+                // sidechain buffering while preserving the original ducking semantics).
+                if (scDetectorBuffer.size() < (size_t)numSamples)
+                    scDetectorBuffer.resize(numSamples);
+                float scLevel = 0.5f * (scLevelL + scLevelR);
+                std::fill(scDetectorBuffer.begin(), scDetectorBuffer.begin() + numSamples, scLevel);
+                detL = scDetectorBuffer.data();
+                detR = nullptr;
             }
-            else if (numChannels >= 1)
-            {
-                for (int s = 0; s < numSamples; ++s)
-                    inputLevel += channels[0][s] * channels[0][s];
-                inputLevel = std::sqrt(inputLevel / (float)numSamples);
-            }
-            processDynamicEQ(i, effectiveGain, inputLevel);
+
+            processDynamicEQ(i, detL, detR, numSamples);
         }
 
         bool isCutFilter = (bands[i].type == FilterType::LowCut || bands[i].type == FilterType::HighCut);
@@ -217,6 +285,19 @@ for (int i = 0; i < MAX_BANDS; ++i)
                 for (int s = 0; s < numStages; ++s)
                     filterStages[i][s].processLeft(channelData, numSamples);
                 break;
+            }
+        }
+
+        // Apply sample-accurate dynamic gain on the band's block output
+        // (reduction sits on top of the static filter gain, no per-block accumulation)
+        if (bands[i].dynamic.enabled)
+        {
+            const float* factor = dynGainFactor.data();
+            for (int ch = 0; ch < numChannels; ++ch)
+            {
+                float* channelData = channels[ch];
+                for (int s = 0; s < numSamples; ++s)
+                    channelData[s] *= factor[s];
             }
         }
 
@@ -264,18 +345,20 @@ void Equalizer::process(float* left, float* right, int numSamples)
 
         if (bands[i].dynamic.enabled)
         {
-            float inputLevel = 0.0f;
+            const float* detL = left;
+            const float* detR = right;
+
             if (bands[i].scTrigger && scLevelL > 0.0f)
             {
-                inputLevel = 0.5f * (scLevelL + scLevelR);
+                if (scDetectorBuffer.size() < (size_t)numSamples)
+                    scDetectorBuffer.resize(numSamples);
+                float scLevel = 0.5f * (scLevelL + scLevelR);
+                std::fill(scDetectorBuffer.begin(), scDetectorBuffer.begin() + numSamples, scLevel);
+                detL = scDetectorBuffer.data();
+                detR = nullptr;
             }
-            else
-            {
-                for (int s = 0; s < numSamples; ++s)
-                    inputLevel += left[s] * left[s];
-                inputLevel = std::sqrt(inputLevel / (float)numSamples);
-            }
-            processDynamicEQ(i, effectiveGain, inputLevel);
+
+            processDynamicEQ(i, detL, detR, numSamples);
         }
 
         bool isCutFilter = (bands[i].type == FilterType::LowCut || bands[i].type == FilterType::HighCut);
@@ -306,6 +389,17 @@ void Equalizer::process(float* left, float* right, int numSamples)
             for (int s = 0; s < numStages; ++s)
                 filterStages[i][s].processRight(right, numSamples);
             break;
+        }
+
+        // Apply sample-accurate dynamic gain on the band's block output
+        if (bands[i].dynamic.enabled)
+        {
+            const float* factor = dynGainFactor.data();
+            for (int s = 0; s < numSamples; ++s)
+            {
+                left[s] *= factor[s];
+                right[s] *= factor[s];
+            }
         }
 
         // Apply phase inversion if enabled

@@ -260,6 +260,7 @@ private:
 
     // === Bottom bar controls (global) ===
     juce::ToggleButton phaseBtn{"Phase"};
+    juce::ToggleButton globalBypassBtn{"Byp"};
     juce::ToggleButton autoGainBtn{"AG"};
     juce::ToggleButton autoGainAdvBtn{"Adv"};
     juce::Slider outputPanSlider;

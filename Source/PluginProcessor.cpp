@@ -63,6 +63,12 @@ juce::AudioProcessorValueTreeState::ParameterLayout EeqProcessor::createLayout()
             juce::ParameterID{"b" + id + "_dynAutoAtk", 1}, "Band " + id + " Auto Attack", true));
         layout.add(std::make_unique<juce::AudioParameterBool>(
             juce::ParameterID{"b" + id + "_dynAutoRel", 1}, "Band " + id + " Auto Release", true));
+        layout.add(std::make_unique<juce::AudioParameterFloat>(
+            juce::ParameterID{"b" + id + "_dynAtkMs", 1}, "Band " + id + " Attack (ms)",
+            juce::NormalisableRange<float>(1.0f, 500.0f, 0.1f, 0.4f), 10.0f));
+        layout.add(std::make_unique<juce::AudioParameterFloat>(
+            juce::ParameterID{"b" + id + "_dynRelMs", 1}, "Band " + id + " Release (ms)",
+            juce::NormalisableRange<float>(1.0f, 2000.0f, 0.1f, 0.4f), 100.0f));
         layout.add(std::make_unique<juce::AudioParameterChoice>(
             juce::ParameterID{"b" + id + "_slope", 1}, "Band " + id + " Slope",
             juce::StringArray{"6 dB", "12 dB", "18 dB", "24 dB", "30 dB", "36 dB", "42 dB", "48 dB", "96 dB", "Brickwall"}, 3));
@@ -287,7 +293,10 @@ equalizer.setProcessingMode(currentMode);
     if (numChannels < 2) channels[1] = channels[0];
 
     // Process using processMultiChannel (handles any channel count)
-    equalizer.processMultiChannel(channels.data(), numChannels, numSamples);
+    // Global bypass: skip all EQ/gain stages, keep signal flowing (spectrum still shown)
+    if (!globalBypass)
+    {
+        equalizer.processMultiChannel(channels.data(), numChannels, numSamples);
 
     // Linear Phase: additionally process first two channels with FFT overlap-add
     if (currentMode == ProcessingMode::LinearPhase)
@@ -372,6 +381,7 @@ equalizer.setProcessingMode(currentMode);
             right[s] *= rightGain;
         }
     }
+    } // end global bypass
 
     // Spectrum analyzer - always update (use available channels)
     if (numChannels >= 2)
@@ -493,6 +503,9 @@ void EeqProcessor::syncAllBandsToDSP()
         state.dynamic.autoThreshold = apvts.getRawParameterValue("b" + id + "_dynAuto")->load() > 0.5f;
         state.dynamic.autoAttack = apvts.getRawParameterValue("b" + id + "_dynAutoAtk")->load() > 0.5f;
         state.dynamic.autoRelease = apvts.getRawParameterValue("b" + id + "_dynAutoRel")->load() > 0.5f;
+        // Manual attack/release (used only when the matching auto toggle is off)
+        state.dynamic.attackMs = apvts.getRawParameterValue("b" + id + "_dynAtkMs")->load();
+        state.dynamic.releaseMs = apvts.getRawParameterValue("b" + id + "_dynRelMs")->load();
         state.scTrigger = apvts.getRawParameterValue("b" + id + "_sc")->load() > 0.5f;
         state.phaseInverted = apvts.getRawParameterValue("b" + id + "_phase")->load() > 0.5f;
         int slopeIdx = (int)apvts.getRawParameterValue("b" + id + "_slope")->load();
@@ -575,6 +588,7 @@ void EeqProcessor::getStateInformation(juce::MemoryBlock& destData)
     auto state = apvts.copyState();
     state.setProperty("gainScale", gainScale, nullptr);
     state.setProperty("phaseInverted", phaseInverted, nullptr);
+    state.setProperty("globalBypass", globalBypass, nullptr);
     state.setProperty("autoGain", autoGainEnabled, nullptr);
     state.setProperty("outputPan", outputPan, nullptr);
     state.setProperty("procMode", (int)currentMode, nullptr);
@@ -598,6 +612,7 @@ void EeqProcessor::setStateInformation(const void* data, int sizeInBytes)
         apvts.replaceState(state);
         gainScale = state.getProperty("gainScale", 1.0f);
         phaseInverted = state.getProperty("phaseInverted", false);
+        globalBypass = state.getProperty("globalBypass", false);
         autoGainEnabled = state.getProperty("autoGain", true);
         outputPan = state.getProperty("outputPan", 0.0f);
         currentMode = (ProcessingMode)(int)state.getProperty("procMode", 0);
@@ -788,6 +803,7 @@ void EeqProcessor::saveStateToFile()
     auto state = apvts.copyState();
     state.setProperty("gainScale", gainScale, nullptr);
     state.setProperty("phaseInverted", phaseInverted, nullptr);
+    state.setProperty("globalBypass", globalBypass, nullptr);
     state.setProperty("autoGain", autoGainEnabled, nullptr);
     state.setProperty("outputPan", outputPan, nullptr);
     state.setProperty("procMode", (int)currentMode, nullptr);
@@ -810,6 +826,7 @@ void EeqProcessor::loadStateFromFile()
         apvts.replaceState(state);
         gainScale = state.getProperty("gainScale", 1.0f);
         phaseInverted = state.getProperty("phaseInverted", false);
+        globalBypass = state.getProperty("globalBypass", false);
         autoGainEnabled = state.getProperty("autoGain", true);
         outputPan = state.getProperty("outputPan", 0.0f);
         currentMode = (ProcessingMode)(int)state.getProperty("procMode", 0);
@@ -833,6 +850,7 @@ void EeqProcessor::saveUserPreset(const juce::String& name)
     auto state = apvts.copyState();
     state.setProperty("gainScale", gainScale, nullptr);
     state.setProperty("phaseInverted", phaseInverted, nullptr);
+    state.setProperty("globalBypass", globalBypass, nullptr);
     state.setProperty("autoGain", autoGainEnabled, nullptr);
     state.setProperty("outputPan", outputPan, nullptr);
     state.setProperty("procMode", (int)currentMode, nullptr);
@@ -884,6 +902,7 @@ void EeqProcessor::loadUserPreset(const juce::String& name)
         apvts.replaceState(state);
         gainScale = state.getProperty("gainScale", 1.0f);
         phaseInverted = state.getProperty("phaseInverted", false);
+        globalBypass = state.getProperty("globalBypass", false);
         autoGainEnabled = state.getProperty("autoGain", true);
         outputPan = state.getProperty("outputPan", 0.0f);
         currentMode = (ProcessingMode)(int)state.getProperty("procMode", 0);

@@ -79,6 +79,10 @@ public:
     bool isPhaseInverted() const { return phaseInverted; }
     void setPhaseInverted(bool inv) { phaseInverted = inv; }
 
+    // Global bypass (host-automatable, bypasses the EQ but keeps signal flowing)
+    bool isGlobalBypassEnabled() const { return globalBypass; }
+    void setGlobalBypassEnabled(bool bp) { globalBypass = bp; }
+
     // Auto Gain
     bool isAutoGainEnabled() const { return autoGainEnabled; }
     void setAutoGainEnabled(bool enabled) { autoGainEnabled = enabled; }
@@ -181,6 +185,7 @@ private:
     LinearPhaseResolution lpResolution = LinearPhaseResolution::High;
     NaturalPhaseResolution npResolution = NaturalPhaseResolution::High;
     bool phaseInverted = false;
+    bool globalBypass = false;
     bool autoGainEnabled = true;
     bool autoGainAdvanced = false;
     float autoGainChannelWeight = 0.5f; // 0.0 = side only, 0.5 = equal, 1.0 = mid only
