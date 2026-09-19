@@ -247,6 +247,7 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     freqSlider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xFFe94560));
     freqSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFFe94560));
     freqSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFffffff));
+    freqSlider.setNumDecimalPlacesToDisplay(0);
     freqSlider.setDoubleClickReturnValue(true, 1000.0);
     freqSlider.setTooltip("Frequency of this EQ band (double-click to reset to 1 kHz)");
     addAndMakeVisible(freqSlider);
@@ -261,6 +262,7 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     gainSlider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xFF00b4d8));
     gainSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFF00b4d8));
     gainSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFffffff));
+    gainSlider.setNumDecimalPlacesToDisplay(2);
     gainSlider.setDoubleClickReturnValue(true, 0.0);
     gainSlider.setTooltip("Gain of this EQ band in dB (double-click to reset to 0 dB)");
     addAndMakeVisible(gainSlider);
@@ -275,6 +277,7 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     qSlider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xFF533483));
     qSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFF533483));
     qSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFffffff));
+    qSlider.setNumDecimalPlacesToDisplay(3);
     qSlider.setDoubleClickReturnValue(true, 0.707);
     qSlider.setTooltip("Q (bandwidth) of this EQ band (double-click to reset to 0.707)");
     addAndMakeVisible(qSlider);
@@ -338,6 +341,7 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     dynRangeSlider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xFF2a9d8f));
     dynRangeSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFF2a9d8f));
     dynRangeSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFffffff));
+    dynRangeSlider.setNumDecimalPlacesToDisplay(1);
     dynRangeSlider.setDoubleClickReturnValue(true, 0.0);
     addAndMakeVisible(dynRangeSlider);
     dynRangeSlider.setVisible(false);
@@ -349,6 +353,7 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     dynThreshSlider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xFF2a9d8f));
     dynThreshSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFF2a9d8f));
     dynThreshSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFffffff));
+    dynThreshSlider.setNumDecimalPlacesToDisplay(1);
     dynThreshSlider.setDoubleClickReturnValue(true, -20.0);
     dynThreshSlider.setTooltip("Threshold level that triggers the dynamic EQ");
     addAndMakeVisible(dynThreshSlider);
@@ -499,6 +504,7 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     dynRangeSlider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xFF2a9d8f));
     dynRangeSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFF2a9d8f));
     dynRangeSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFffffff));
+    dynRangeSlider.setNumDecimalPlacesToDisplay(1);
     dynRangeSlider.setDoubleClickReturnValue(true, 0.0);
     dynRangeSlider.setTooltip("Dynamic EQ range: how much the gain varies around its static value");
     addAndMakeVisible(dynRangeSlider);
@@ -511,6 +517,7 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     dynThreshSlider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xFF2a9d8f));
     dynThreshSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFF2a9d8f));
     dynThreshSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFffffff));
+    dynThreshSlider.setNumDecimalPlacesToDisplay(1);
     dynThreshSlider.setDoubleClickReturnValue(true, -20.0);
     dynThreshSlider.setTooltip("Threshold level that triggers the dynamic EQ");
     addAndMakeVisible(dynThreshSlider);
@@ -523,6 +530,7 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     dynAtkSlider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xFFe76f51));
     dynAtkSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFFe76f51));
     dynAtkSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFffffff));
+    dynAtkSlider.setNumDecimalPlacesToDisplay(0);
     dynAtkSlider.setDoubleClickReturnValue(true, 10.0);
     dynAtkSlider.setTooltip("Manual attack time (ms): used when Auto Attack is off");
     addAndMakeVisible(dynAtkSlider);
@@ -535,6 +543,7 @@ EeqEditor::EeqEditor(EeqProcessor& p)
     dynRelSlider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xFFe76f51));
     dynRelSlider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFFe76f51));
     dynRelSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFffffff));
+    dynRelSlider.setNumDecimalPlacesToDisplay(0);
     dynRelSlider.setDoubleClickReturnValue(true, 100.0);
     dynRelSlider.setTooltip("Manual release time (ms): used when Auto Release is off");
     addAndMakeVisible(dynRelSlider);
