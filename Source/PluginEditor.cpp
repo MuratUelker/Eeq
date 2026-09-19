@@ -149,7 +149,19 @@ EeqEditor::EeqEditor(EeqProcessor& p)
 
     for (const auto& name : displayRangeNames)
         displayRangeBox.addItem(name, displayRangeBox.getNumItems() + 1);
-    displayRangeBox.setSelectedId(1); // 3 dB default (kullanıcı ile uyumlu)
+    // Sync with processor's display range (processor default is 30 dB = index 3)
+    static constexpr float scaleValues[4] = {3.0f, 6.0f, 12.0f, 30.0f};
+    float procRange = processor.getDisplayRange();
+    int syncIdx = 3; // default to 30 dB
+    for (int i = 0; i < 4; ++i)
+    {
+        if (std::abs(scaleValues[i] - procRange) < 0.01f)
+        {
+            syncIdx = i;
+            break;
+        }
+    }
+    displayRangeBox.setSelectedId(syncIdx + 1, juce::dontSendNotification);
     displayRangeBox.setColour(juce::ComboBox::backgroundColourId, juce::Colour(0xFF16213e));
     displayRangeBox.setColour(juce::ComboBox::textColourId, juce::Colour(0xFFe0e0ff));
     displayRangeBox.setTooltip("Vertical zoom of the EQ display");
@@ -886,20 +898,13 @@ float EeqEditor::xToFreq(float x, juce::Rectangle<float> d) const
 float EeqEditor::gainToY(float gain, juce::Rectangle<float> d) const
 {
     float range = processor.getDisplayRange();
-    // Use a reference range of 6.0f for consistency with yToGain
-    // The displayRange still controls visual display scaling
-    constexpr float REFERENCE_RANGE = 6.0f;
-    return (d.getHeight() * 0.5f) - (gain / REFERENCE_RANGE) * (d.getHeight() * 0.5f);
+    return (d.getHeight() * 0.5f) - (gain / range) * (d.getHeight() * 0.5f);
 }
 
 float EeqEditor::yToGain(float y, juce::Rectangle<float> d) const
 {
     float range = processor.getDisplayRange();
-    // Use a reference range of 6.0f for mouse sensitivity to ensure consistent
-    // behavior regardless of the display range setting. The displayRange variable
-    // still controls the visual zoom of the EQ curve.
-    constexpr float REFERENCE_RANGE = 6.0f;
-    return ((d.getHeight() * 0.5f) - y) / (d.getHeight() * 0.5f) * REFERENCE_RANGE;
+    return ((d.getHeight() * 0.5f) - y) / (d.getHeight() * 0.5f) * range;
 }
 
 float EeqEditor::qToRadius(float q) const
@@ -1586,16 +1591,18 @@ void EeqEditor::comboBoxChanged(juce::ComboBox* box)
     }
     else if (box == &displayRangeBox)
     {
+        // Centralized scale mapping: index → dB value
+        static constexpr float scaleValues[4] = {3.0f, 6.0f, 12.0f, 30.0f};
+        int idx = displayRangeBox.getSelectedId() - 1;
+        idx = juce::jlimit(0, 3, idx);
+        
         // Write the APVTS parameter using the selected index (canonical way for choice params)
-        // This ensures the value sticks across sessions
         auto* param = processor.getAPVTS().getParameter("displayRange");
         if (param != nullptr)
-            // Normalized 0..1 choice index: canonical for AudioParameterChoice.
-            // (getSelectedId() is 1-based; /3.0f maps 3/6/12/30 → 0/0.333/0.667/1.0)
-            param->setValueNotifyingHost((displayRangeBox.getSelectedId() - 1) / 3.0f);
+            param->setValueNotifyingHost(idx / 3.0f);
         
-        // Also update the processor member directly for immediate display response
-        processor.setDisplayRange((float)displayRangeBox.getSelectedId());
+        // Update the processor member directly for immediate display response
+        processor.setDisplayRange(scaleValues[idx]);
     }
     else if (box == &instanceSelector)
     {
