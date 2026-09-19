@@ -1590,7 +1590,9 @@ void EeqEditor::comboBoxChanged(juce::ComboBox* box)
         // This ensures the value sticks across sessions
         auto* param = processor.getAPVTS().getParameter("displayRange");
         if (param != nullptr)
-            param->setValueNotifyingHost(displayRangeBox.getSelectedId() - 1); // 0-based index
+            // Normalized 0..1 choice index: canonical for AudioParameterChoice.
+            // (getSelectedId() is 1-based; /3.0f maps 3/6/12/30 → 0/0.333/0.667/1.0)
+            param->setValueNotifyingHost((displayRangeBox.getSelectedId() - 1) / 3.0f);
         
         // Also update the processor member directly for immediate display response
         processor.setDisplayRange((float)displayRangeBox.getSelectedId());

@@ -281,7 +281,7 @@ void EeqProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuff
 
 // Check for display range change — read the APVTS choice index directly
     // (AudioParameterChoice stores 0-based index: 0=3dB, 1=6dB, 2=12dB, 3=30dB)
-    int index = juce::jlimit(0, 3, (int)apvts.getRawParameterValue("displayRange")->load());
+    int index = juce::jlimit(0, 3, juce::roundToInt(apvts.getRawParameterValue("displayRange")->load() * 3.0f));
     float newDisplayRange = (index == 0) ? 3.0f : (index == 1 ? 6.0f : (index == 2 ? 12.0f : 30.0f));
     if (std::abs(newDisplayRange - displayRange) > 0.01f)
     {
